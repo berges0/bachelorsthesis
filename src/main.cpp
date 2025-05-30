@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
         auto nearest = Extension.queryNearest(0.5, 0.0, 3);
         for (const auto& seg : nearest) {
-            std::cout << "Segment: " << bg::wkt<Segment>(seg) << "\n";
+            std::cout << "Segment: " << bg::wkt<Segment>(seg.geometry) << "\n";
         }
 
     } catch (const std::exception& e) {
