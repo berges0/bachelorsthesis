@@ -24,7 +24,7 @@ public:
     EdgeExtension()=default;
     void buildRTree(const std::vector<SHPLoader::Point2D>& points,
                         const std::vector<std::vector<int>>& polygons);
-    std::vector<Segment> queryNearest(double x, double y, std::size_t k) const;
+    std::vector<Segment> queryNearest(double x, double y, int k) const;
 
 private:
     RTree rtree;

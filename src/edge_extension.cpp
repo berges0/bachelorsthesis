@@ -6,10 +6,10 @@ void EdgeExtension::buildRTree(const std::vector<SHPLoader::Point2D>& points, co
 {
 
     for (const auto& poly : polygons) {
-        std::size_t n = poly.size();
+        int n = poly.size();
         if (n < 2) continue;
 
-        for (std::size_t i = 0; i < n; ++i) {
+        for (int i = 0; i < n; ++i) {
             const auto& p1 = points[poly[i]];
             const auto& p2 = points[poly[(i + 1) % n]]; // Polygon schließen
 
