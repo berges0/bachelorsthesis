@@ -13,7 +13,8 @@ find_package(Boost REQUIRED)
 # Add your own code
 add_executable(aggregator src/main.cpp
         src/edge_extension.cpp
-        src/edge_extension.cpp)
+        src/edge_extension.cpp
+        src/algorithm.cpp)
 
 target_include_directories(aggregator PRIVATE include)
 
