@@ -4,23 +4,29 @@ project(edge_aligned_aggregation)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Add external lib
+# Add external subdirectory (your shapefile loader lib)
 add_subdirectory(lib/shapefileaggregationloader)
-# Add Boost package
+
+# Find Boost
 find_package(Boost REQUIRED)
 
+# Find CGAL
+find_package(CGAL REQUIRED)
 
-# Add your own code
-add_executable(aggregator src/main.cpp
-        src/edge_extension.cpp
-        src/edge_extension.cpp
-        src/algorithm.cpp)
+# Your executable
+add_executable(aggregator
+        src/main.cpp
+        src/algorithm.cpp
+)
 
-target_include_directories(aggregator PRIVATE include)
+# Include paths
+target_include_directories(aggregator PRIVATE
+        include
+        ${Boost_INCLUDE_DIRS}
+)
 
-target_include_directories(aggregator PRIVATE ${Boost_INCLUDE_DIRS})
-
-# Link your code with the library
+# Link libraries
 target_link_libraries(aggregator
+        PRIVATE CGAL::CGAL
         PRIVATE instance_loader_lib
 )

@@ -1,4 +1,3 @@
-#include "edge_extension.hpp"
 #include <algorithm.hpp>
 #include <algorithm>
 #include <filesystem>
@@ -34,7 +33,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Points: " << data.first.size() << std::endl;
         std::cout << "Polygons: " << data.second.size() << std::endl;
         algorithm algo;
-        algo.extend_segments(algo.build_segment_vector(data.first, data.second));
+        algo.ray_shoot_intersection(algo.build_segment_vector(data.first, data.second));
 
 
     } catch (const std::exception& e) {
