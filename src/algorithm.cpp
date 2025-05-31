@@ -23,13 +23,61 @@ std::vector<Segment> algorithm::build_segment_vector(const std::vector<SHPLoader
 std::vector<Segment> algorithm::ray_shoot_intersection(std::vector<Segment> segments) {
     Tree tree(segments.begin(), segments.end());
     tree.build();
+
+    std::vector<Segment> extended_segments;
+
+    for (const Segment& seg : segments) {
+        Line line(seg);
+        Point p1 = seg.source();
+        Point p2 = seg.target();
+
+        Vector forward = p2 - p1;
+        Vector backward = p1 - p2;
+
+        auto hit_forward = nearest_intersection_in_direction(p1, forward, tree, seg);
+        auto hit_backward = nearest_intersection_in_direction(p2, backward, tree, seg);
+
+        if (hit_forward) {
+            std::cout << "entered" << std::endl;
+            extended_segments.emplace_back(p1, *hit_forward);
+        }
+        if (hit_backward) {
+            std::cout << "entered" << std::endl;
+            extended_segments.emplace_back(p2, *hit_backward);
+        }
+    }
     std::cout << tree.size() << std::endl;
-    return segments;
+    std::cout << extended_segments.size() << std::endl;
+
+    return extended_segments;
 }
 
 
 
+std::optional<Point> algorithm::nearest_intersection_in_direction(
+    const Point& origin,
+    const Vector& direction,
+    const Tree& tree,
+    const Segment& self_segment)
+{
 
+    Ray ray(origin, origin + direction);
 
-
-
+    auto result = tree.first_intersection(ray);
+    if (result) {
+        std::cout << "Intersection found\n";
+        // unpack intersection as before, return point
+    } else {
+        std::cout << "No intersection found from origin: "
+                  << CGAL::to_double(origin.x()) << ", "
+                  << CGAL::to_double(origin.y()) << "\n";
+    }
+    if (result) {
+        if (const Point* ipoint = std::get_if<Point>(&(result->first))) {
+            if (*ipoint != self_segment.source() && *ipoint != self_segment.target()) {
+                return *ipoint;
+            }
+        }
+    }
+    return std::nullopt;
+}
