@@ -12,6 +12,7 @@
 #include <vector>
 #include <iostream>
 #include <optional>
+#include <algorithm>
 #include "instance_loader/BasicDataStructures.hpp"
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
@@ -41,6 +42,8 @@ public:
       const Vector& direction,
       const Tree& tree,
       const Segment& self_segment);
+
+  void segments_to_svg(const std::vector<Segment>& segments, const std::string& filename);
 };
 
 #endif // ALGORITHM_HPP

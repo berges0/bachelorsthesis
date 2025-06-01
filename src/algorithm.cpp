@@ -24,6 +24,8 @@ std::vector<Segment> algorithm::ray_shoot_intersection(std::vector<Segment> segm
     Tree tree(segments.begin(), segments.end());
     tree.build();
 
+    segments_to_svg(segments, "test.svg");
+
     std::vector<Segment> extended_segments;
 
     for (const Segment& seg : segments) {
@@ -80,4 +82,49 @@ std::optional<Point> algorithm::nearest_intersection_in_direction(
         }
     }
     return std::nullopt;
+}
+
+// creates a svg, that represents all segments and centers them
+void algorithm::segments_to_svg(const std::vector<Segment>& segments, const std::string& filename) {
+
+    double min_x = std::numeric_limits<double>::max();
+    double max_x = std::numeric_limits<double>::lowest();
+    double min_y = std::numeric_limits<double>::max();
+    double max_y = std::numeric_limits<double>::lowest();
+
+    for (const auto& s : segments) {
+        min_x = std::min({min_x, CGAL::to_double(s.source().x()), CGAL::to_double(s.target().x())});
+        max_x = std::max({max_x, CGAL::to_double(s.source().x()), CGAL::to_double(s.target().x())});
+        min_y = std::min({min_y, CGAL::to_double(s.source().y()), CGAL::to_double(s.target().y())});
+        max_y = std::max({max_y, CGAL::to_double(s.source().y()), CGAL::to_double(s.target().y())});
+    }
+
+    double padding = 10.0; // Adjust based on your coordinate range
+    min_x -= padding;
+    max_x += padding;
+    min_y -= padding;
+    max_y += padding;
+
+    double width = max_x - min_x;
+    double height = max_y - min_y;
+
+    std::ofstream svg_file(filename);
+    svg_file << std::fixed << std::setprecision(10); // HIGH precision output
+
+    svg_file << "<svg xmlns=\"http://www.w3.org/2000/svg\" "
+             << "viewBox=\"" << min_x << " " << min_y << " " << width << " " << height << "\" "
+             << "width=\"" << 1000 << "\" height=\"" << 1000 * height / width << "\" "
+             << "preserveAspectRatio=\"xMidYMid meet\" "
+             << "fill=\"none\" stroke=\"black\" stroke-width=\"1\">\n";
+
+
+    for (const auto& s : segments) {
+        svg_file << "<line x1=\"" << s.source().x() << "\" y1=\"" << (max_y -(s.source().y()- min_y))
+                 << "\" x2=\"" << s.target().x() << "\" y2=\"" << (max_y - (s.target().y() - min_y))
+                 << "\" />\n";
+    }
+
+    svg_file << "</svg>\n";
+
+    svg_file.close();
 }
