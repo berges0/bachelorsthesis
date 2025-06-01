@@ -56,6 +56,7 @@ std::vector<Segment> algorithm::ray_shoot_intersection(std::vector<Segment> segm
 
 
 
+
 std::optional<Point> algorithm::nearest_intersection_in_direction(
     const Point& origin,
     const Vector& direction,
