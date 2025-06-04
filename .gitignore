@@ -3,7 +3,7 @@ build/
 builds/
 cmake-build-*
 .idea
-
+.vscode/
 !instances/.gitkeep
 
 !benchmark/.gitkeep
