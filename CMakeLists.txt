@@ -18,7 +18,7 @@ add_executable(aggregator
         src/main.cpp
         src/algorithm.cpp
 )
-
+target_precompile_headers(aggregator PRIVATE include/pch.hpp)
 # Include paths
 target_include_directories(aggregator PRIVATE
         include
