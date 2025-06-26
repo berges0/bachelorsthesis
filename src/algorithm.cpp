@@ -141,13 +141,18 @@ void algorithm::segments_to_svg(const std::vector<Segment>& segments, const std:
     svg_file.close();
 }
 
-Arrangement algorithm::build_arrangement(std::vector<Segment_w_info> segments) {
-    Arrangement arr;
-    for (const Segment_w_info& seg : segments) {
-        CGAL::insert(arr, seg.seg);
+Arrangement &algorithm::build_arrangement(std::vector<Segment_w_info> segments) {
+    static Arrangement arr;
+    std::vector<Curve> curves;
+    int next_id = 0;
+    for (const auto& seg : segments) {
+        Curve c(seg.seg, seg.from_poly, seg.poly_id);
+        curves.push_back(c);
     }
+    CGAL::insert(arr, curves.begin(), curves.end());
     return arr;
 }
+
 
 void algorithm::run(std::string input_path) {
 

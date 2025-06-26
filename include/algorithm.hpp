@@ -51,7 +51,7 @@ public:
 
   void segments_to_svg(const std::vector<Segment>& segments, const std::string& filename);
 
-  Arrangement build_arrangement(std::vector<Segment_w_info> segments);
+  Arrangement &build_arrangement(std::vector<Segment_w_info> segments);
 
   void run(std::string input_path);
 
