@@ -17,6 +17,10 @@ find_package(CGAL REQUIRED)
 add_executable(aggregator
         src/main.cpp
         src/algorithm.cpp
+        src/algo_geometry.cpp
+        src/arrangement.cpp
+        src/graphbuild.cpp
+        src/io_functions.cpp
 )
 target_precompile_headers(aggregator PRIVATE include/pch.hpp)
 # Include paths

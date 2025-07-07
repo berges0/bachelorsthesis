@@ -12,15 +12,30 @@
 #include <CGAL/Segment_2.h>
 #include <CGAL/Line_2.h>
 #include <CGAL/intersections.h>
-#include <CGAL/Sweep_line_2_algorithms.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <list>
+#include <tuple>
+#include <CGAL/Arr_curve_data_traits_2.h>
 #include <CGAL/Arrangement_with_history_2.h>
+#include <numeric>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Arr_extended_dcel.h>
+#include <typeinfo>
+#include <cmath>
 #include "instance_loader/BasicDataStructures.hpp"
 #include "instance_loader/Geometry.hpp"
 #include "instance_loader/shapefile_io_operations.h"
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/boykov_kolmogorov_max_flow.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/property_map/property_map.hpp>
+
+
+
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+
+
 typedef Kernel::Point_2 Point;
 typedef Kernel::Segment_2 Segment;
 typedef Kernel::Line_2 Line;
@@ -28,87 +43,158 @@ typedef Kernel::Vector_2 Vector;
 typedef Kernel::Ray_2 Ray;
 
 
+
+
+
 typedef std::vector<Segment>::iterator Iterator;
 typedef CGAL::AABB_segment_primitive_2<Kernel, Iterator> Primitive;
-typedef CGAL::AABB_traits_2<Kernel, Primitive> Traits;
-typedef CGAL::AABB_tree<Traits> Tree;
+typedef CGAL::AABB_traits_2<Kernel, Primitive> TreeTraits;
+typedef CGAL::AABB_tree<TreeTraits> Tree;
 
+struct SkipSegment {
+  const Segment* to_skip;
 
+  SkipSegment(const Segment* s) : to_skip(s) {}
+
+  bool operator()(const Primitive::Id& id) const {
+    const Segment& s = *id;
+
+    // Skip exact same segment (by pointer)
+    if (&s == to_skip) return true;
+
+    // Skip segments that share an endpoint with the segment to skip
+    return shares_endpoint(s, *to_skip);
+  }
+
+  bool shares_endpoint(const Segment& a, const Segment& b) const {
+    return a.source() == b.source() || a.source() == b.target() ||
+           a.target() == b.source() || a.target() == b.target();
+  }
+};
+
+struct Segment_w_info{
+  Segment seg;
+  bool from_poly;
+  int poly_id;
+  Segment_w_info(const Segment& s, bool fp, int id) : seg(s), from_poly(fp), poly_id(id) {}
+};
+
+/*
 template <typename K>
-class CustomSegmentTraits : public CGAL::Arr_segment_traits_2<K> {
+class CustomArrangementTraits : public CGAL::Arr_segment_traits_2<K> {
 public:
-  typedef CGAL::Arr_segment_traits_2<K> Base;
+    typedef CGAL::Arr_segment_traits_2<K> Base;
 
-  class Curve_2 : public Base::Curve_2 {
-  public:
-    bool frompoly = false;
-    int id = -1;
-    int source_p = -1;
-    int target_p = -1;
+    // Define a new Curve_2 that stores an ID
+    class Curve_2 : public Base::Curve_2 {
+    public:
+        bool frompoly = false; // Flag to indicate if the curve is from a polygon
+        // Store an ID for each curve
+        int id = -1;
 
-    using Base::Curve_2::Curve_2;
+        using Base::Curve_2::Curve_2; // Inherit constructors
 
-    Curve_2() : Base::Curve_2(), frompoly(false), id(-1) {}
-    Curve_2(const typename Base::Curve_2& base, bool frompoly, int id)
-        : Base::Curve_2(base), frompoly(frompoly), id(id) {}
-    Curve_2(const typename Base::Curve_2& base, bool frompoly, int id, int s, int t)
-        : Base::Curve_2(base), frompoly(frompoly), id(id), source_p(s), target_p(t) {}
+        Curve_2() : Base::Curve_2(), frompoly(false), id(-1) {}  // Default constructor with ID = -1
+        Curve_2(const typename Base::Curve_2& base, bool frompoly, int id) : Base::Curve_2(base), frompoly(frompoly), id(id) {}
 
-    Curve_2(const typename Base::Point_2& p,
-            const typename Base::Point_2& q,
-            bool frompoly,
-            int id)
-        : Base::Curve_2(p, q), frompoly(frompoly), id(id) {}
+        Curve_2(const Segment& seg, bool frompoly, int id) :
+                Base::Curve_2(seg), frompoly(frompoly), id(id) {};
 
-    Curve_2(const typename Base::Point_2& p,
-            const typename Base::Point_2& q,
-            bool frompoly, int id, int s, int t)
-        : Base::Curve_2(p, q), frompoly(frompoly), id(id), source_p(s), target_p(t) {}
+        //copy constructor
+        Curve_2(const Curve_2& other):
+        Base::Curve_2(other), frompoly(other.frompoly), id(other.id) {}
 
-    Curve_2(const Curve_2& other)
-        : Base::Curve_2(other), frompoly(other.frompoly), id(other.id),
-          source_p(other.source_p), target_p(other.target_p) {}
 
-    Curve_2& operator=(const Curve_2& other) {
-      if (this != &other) {
-        Base::Curve_2::operator=(other);
-        frompoly = other.frompoly;
-        id = other.id;
-        source_p = other.source_p;
-        target_p = other.target_p;
-      }
-      return *this;
-    }
-  };
+        //override assignment op
+        Curve_2& operator=(const Curve_2& other) {
+            if (this != &other) {
+                Base::Curve_2::operator=(other);  // Call base assignment
+                id = other.id;
+            }
+            return *this;
+        }
+
+    };
 };
 
 
-typedef CustomSegmentTraits<Kernel> ArrTraits;
-typedef CGAL::Arrangement_with_history_2<ArrTraits> Arrangement;
-typedef ArrTraits::Curve_2 Curve;
+//typedef CGAL::Arr_circular_line_arc_traits_2<K> Traits;
+typedef CustomArrangementTraits<Kernel>                       Traits;
+typedef Traits::Curve_2								 Curve;
+typedef Traits::Point_2                              Point_arr;*/
 
+typedef bool CurveData;              // data attached to original Curve_2
+typedef bool XMonotoneCurveData;     // data attached to x-monotone curves
 
+typedef CGAL::Arr_segment_traits_2<Kernel> BaseTraits;
+struct Merge {
+  XMonotoneCurveData operator()(const XMonotoneCurveData& d1,
+                                const XMonotoneCurveData& d2) const {
+    std::cout << "Merging data: " << std::endl;
+    // for example: choose lower id, or add ids, etc.
+    return d1 || d2; // simple merge, just return true if any of the curves has data
+  }
+};
+// Optional: define conversion functor from CurveData → XMonotoneCurveData
+struct Convert {
+  XMonotoneCurveData operator()(const CurveData& d) const {
+    return d;  // trivial if types are same
+  }
+};
 
+typedef CGAL::Arr_curve_data_traits_2<BaseTraits, XMonotoneCurveData, Merge, CurveData, Convert> Traits;
+typedef Traits::Curve_2 Curve;
 
-/*
-#include <algorithm.hpp>
-#include <algorithm>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
+//define DCEL with face attributes for lookup
+// Custom halfedge class with additional data
+struct HalfedgeData
+{
+    bool frompoly;
+    /*int id;
+    int orig_curve_id;
+    int orig_source_id;
+    int orig_target_id;
+    int orig_ca_id;
+    int is_on_poly;*/
+};
 
-#include "instance_loader/BasicDataStructures.hpp"
-#include "instance_loader/Geometry.hpp"
-#include "instance_loader/shapefile_io_operations.h"
+struct VertexData {
+    bool is_on_poly = false;
+};
 
+struct FaceData {
+    int id = -1;
+    bool belongs_to_poly = false;
+    double area = 0.0; // Optional: area of the face, if needed
 
-#include <fstream>
-#include <vector>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+    //Default Constructor
+    FaceData(): id(-1), belongs_to_poly(false), area(0) {}
+    // Constructor that initializes only the ID
+    FaceData(int _id) : id(_id), belongs_to_poly(false) {}
+    FaceData(int _id, bool poly_face) : id(_id), belongs_to_poly(poly_face) {}
+    FaceData(int _id, bool poly_face, double _area)
+        : id(_id), belongs_to_poly(poly_face), area(_area) {}
+};
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
-typedef Kernel::Point_2 Point;
-typedef Kernel::Segment_2 Segment;*/
+typedef CGAL::Arr_extended_dcel<Traits,
+                                VertexData, // data field for vertices
+                                HalfedgeData,// data field for halfedge
+                                FaceData> //data field for faces
+                                                            DCEL;
+
+//typedef CGAL::Arr_face_extended_dcel<Traits, int>           DCEL;
+typedef CGAL::Arrangement_with_history_2<Traits, DCEL>       Arrangement;
+
+typedef CGAL::Polygon_2<Kernel> Polygon_2;
+
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+    boost::no_property,
+    boost::property<boost::edge_index_t, std::size_t> > GraphType;
+
+typedef boost::graph_traits<GraphType>::vertex_descriptor VertexDescriptor;
+typedef boost::graph_traits<GraphType>::edge_descriptor EdgeDescriptor;
+typedef boost::graph_traits<GraphType>::vertices_size_type VertexIndex;
+typedef boost::graph_traits<GraphType>::edges_size_type EdgeIndex;
+
 
 #endif
