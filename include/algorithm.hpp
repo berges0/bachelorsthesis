@@ -35,8 +35,11 @@ public:
   void AddBidirectionalEdge(GraphType& graph, unsigned int source, unsigned int target, float weight,
                           std::vector<EdgeDescriptor>& reverseEdges, std::vector<float>& capacity);
 
-  void max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data);
+  const std::vector<Segment> &max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, const Arrangement &arr);
 
+  const std::vector<Polygon_2> &output_polygons(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr);
+
+  const std::vector<Segment> &output_segs(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr);
 
   void run(std::string input_path);
 
