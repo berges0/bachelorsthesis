@@ -76,7 +76,11 @@ struct Segment_w_info{
   Segment seg;
   bool from_poly;
   int poly_id;
-  Segment_w_info(const Segment& s, bool fp, int id) : seg(s), from_poly(fp), poly_id(id) {}
+  bool shoot_source;
+  bool shoot_target;
+  Segment_w_info(const Segment& s, bool fp, int id, bool shoot_source,
+  bool shoot_target) : seg(s), from_poly(fp), poly_id(id),  shoot_source(shoot_source),
+  shoot_target(shoot_target) {}
 };
 
 /*
@@ -166,14 +170,14 @@ struct FaceData {
     int id = -1;
     bool belongs_to_poly = false;
     double area = 0.0; // Optional: area of the face, if needed
-
+    bool yet_unvisited = true;
     //Default Constructor
     FaceData(): id(-1), belongs_to_poly(false), area(0) {}
     // Constructor that initializes only the ID
-    FaceData(int _id) : id(_id), belongs_to_poly(false) {}
-    FaceData(int _id, bool poly_face) : id(_id), belongs_to_poly(poly_face) {}
-    FaceData(int _id, bool poly_face, double _area)
-        : id(_id), belongs_to_poly(poly_face), area(_area) {}
+    FaceData(int _id) : id(_id) {}
+    FaceData(int _id, bool _belongs_to_poly) : id(_id), belongs_to_poly(_belongs_to_poly) {}
+    FaceData(int _id, bool _belongs_to_poly, double _area)
+        : id(_id), belongs_to_poly(_belongs_to_poly), area(_area) {}
 };
 
 typedef CGAL::Arr_extended_dcel<Traits,

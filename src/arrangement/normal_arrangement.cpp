@@ -31,12 +31,7 @@ Arrangement &algorithm::build_arrangement(std::vector<Segment_w_info> segments) 
     int count5=0;
 
     for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-        for (auto edge = fit->outer_ccb(); edge != fit->outer_ccb(); ++edge) {
-            if (edge->data().frompoly) {
-                fit->set_data(FaceData(face_count, true));
-                break; // only need to set once
-            }
-        }
+
         poly.clear();
         bool pure_poly;
         if (fit->is_unbounded()) {
@@ -105,10 +100,10 @@ void algorithm::add_box(std::vector<Segment_w_info> &segs, std::pair<Point, Poin
     Point trc(limits.second.x(), limits.second.y());
     Point brc(limits.second.x(), limits.first.y());
 
-    Segment_w_info edge1(Segment(blc, tlc), false, id++);
-    Segment_w_info edge2(Segment(tlc, trc), false, id++);
-    Segment_w_info edge3(Segment(trc, brc), false, id++);
-    Segment_w_info edge4(Segment(brc, blc), false, id++);
+    Segment_w_info edge1(Segment(blc, tlc), false, id++,false,false);
+    Segment_w_info edge2(Segment(tlc, trc), false, id++,false,false);
+    Segment_w_info edge3(Segment(trc, brc), false, id++,false,false);
+    Segment_w_info edge4(Segment(brc, blc), false, id++,false,false);
     segs.push_back(edge1);
     segs.push_back(edge2);
     segs.push_back(edge3);
