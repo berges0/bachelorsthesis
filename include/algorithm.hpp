@@ -8,6 +8,8 @@ public:
 
   void segments_to_svg(const std::vector<Segment>& segments, const std::string& filename);
 
+  void polygons_to_svg(const std::vector<Polygon_2>& polygons, const std::string& filename);
+
   std::pair<std::vector<Segment_w_info>, std::pair<Point, Point>> build_segment_vector(
       const std::vector<SHPLoader::Point2D>& points,
       const std::vector<std::vector<int>>& polygons);
@@ -35,7 +37,11 @@ public:
   void AddBidirectionalEdge(GraphType& graph, unsigned int source, unsigned int target, float weight,
                           std::vector<EdgeDescriptor>& reverseEdges, std::vector<float>& capacity);
 
-  const std::vector<Segment> &max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, const Arrangement &arr);
+  const std::vector<Polygon_2> &max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, Arrangement &arr);
+
+  const std::vector<Polygon_2> &combined_output_polygons(const std::vector<int> &groups, Arrangement &arr);
+
+  void DFS(Arrangement::Face_iterator &fit, const std::vector<int> &groups, Polygon_2 &polygon);
 
   const std::vector<Polygon_2> &output_polygons(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr);
 

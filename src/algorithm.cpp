@@ -34,9 +34,9 @@ void algorithm::run(std::string input_path) {
     segments_to_svg(segs_wo_info(extended_segs),"extended.svg");
 
     Arrangement arr = build_arrangement(extended_segs);
-    auto graph = build_graph(arr, 0.001);
+    auto graph = build_graph(arr, 1);
     auto output_data = max_flow(graph,arr);
-    segments_to_svg(output_data, "output_segs.svg");
+    polygons_to_svg(output_data, "output_polys.svg");
     //write_output_polygons(output_data, out_path);
     std::cout << "Arrangement has "
           << arr.number_of_vertices() << " vertices, "

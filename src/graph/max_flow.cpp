@@ -24,7 +24,7 @@ void algorithm::AddBidirectionalEdge(GraphType& graph, unsigned int source, unsi
 }
 
 //const std::vector<Polygon_2>
-const std::vector<Segment> &algorithm::max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, const Arrangement &arr) {
+const std::vector<Polygon_2> &algorithm::max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, Arrangement &arr) {
     GraphType graph;
     int sourceId = std::get<2>(graph_data);
     int sinkId = std::get<3>(graph_data);
@@ -107,7 +107,7 @@ const std::vector<Segment> &algorithm::max_flow(std::tuple<std::vector<std::pair
         }
     }
     std::cout << "There are " << counter << " faces out of "<< count3<<" not in the solution although they should be" << std::endl;
-    return output_segs(groups, sourceVertex, arr);
+    return combined_output_polygons(groups, arr);
 }
 
 const std::vector<Polygon_2> &algorithm::output_polygons(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr) {
@@ -132,30 +132,36 @@ const std::vector<Polygon_2> &algorithm::output_polygons(const std::vector<int> 
     }
     return polygons;
 }
-/*
-const std::vector<Polygon_2> &algorithm::combined_output_polygons(const std::vector<int> &groups, const Arrangement &arr) {
+
+const std::vector<Polygon_2> &algorithm::combined_output_polygons(const std::vector<int> &groups, Arrangement &arr) {
     static std::vector<Polygon_2> polygons;
-    int source_id = groups[groups.size() - 1];
-    for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-        if (fit->is_unbounded() || groups[fit->data().id]==0) continue; // skip unbounded faces
-        Polygon_2 poly;
-        auto circ = fit->outer_ccb();
-        auto curr = circ;
-        do {
-            const auto& source = curr->source()->point();
-            const auto& target = curr->target()->point();
-            poly.push_back(source);
-            ++curr;
-        } while (curr != circ);
-        if (!poly.is_simple()) {
-            std::cerr << "Polygon is not simple!" << std::endl;
-            continue;
-        }
-        polygons.push_back(poly);
+    for (Arrangement::Face_iterator fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+        if (fit->is_unbounded() || !(fit->data().yet_unvisited) || groups[fit->data().id]==0) continue;
+            Polygon_2 poly;
+            DFS(fit,groups,poly);
+            polygons.push_back(poly);
     }
     return polygons;
 }
-*/
+
+void algorithm::DFS(Arrangement::Face_iterator &fit, const std::vector<int> &groups, Polygon_2 &polygon) {
+    if (groups[fit->data().id]==0||fit->is_unbounded()||!(fit->data().yet_unvisited)) return;
+    fit->data().yet_unvisited=false;
+    Arrangement::Ccb_halfedge_circulator circ = fit->outer_ccb();
+    do {
+        Arrangement::Ccb_halfedge_circulator  twin = circ->twin();
+        if (groups[twin->face()->data().id]==0 || twin->face()->is_unbounded()) {
+            polygon.push_back(circ->curve().source());
+            polygon.push_back(circ->curve().target());
+        }
+        else if (twin->face()->data().yet_unvisited) {
+            Arrangement::Face_iterator fit1 = twin->face();
+            DFS(fit1, groups, polygon);
+        }
+        circ ++;
+    }while (fit->outer_ccb() != circ);
+}
+
 const std::vector<Segment> &algorithm::output_segs(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr) {
     static std::vector<Segment> segs;
     for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
