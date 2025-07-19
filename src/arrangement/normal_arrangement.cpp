@@ -95,10 +95,10 @@ Arrangement &algorithm::build_arrangement(std::vector<Segment_w_info> segments) 
 
 void algorithm::add_box(std::vector<Segment_w_info> &segs, std::pair<Point, Point> limits) {
     int id = segs.size();
-    Point blc(limits.first.x(), limits.first.y());
-    Point tlc(limits.first.x(), limits.second.y());
-    Point trc(limits.second.x(), limits.second.y());
-    Point brc(limits.second.x(), limits.first.y());
+    Point blc(limits.first.x()-1., limits.first.y()-1.);
+    Point tlc(limits.first.x()-1., limits.second.y()+1.);
+    Point trc(limits.second.x()+1., limits.second.y()+1.);
+    Point brc(limits.second.x()+1., limits.first.y()-1.);
 
     Segment_w_info edge1(Segment(blc, tlc), false, id++,false,false);
     Segment_w_info edge2(Segment(tlc, trc), false, id++,false,false);

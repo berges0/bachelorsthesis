@@ -37,17 +37,19 @@ public:
   void AddBidirectionalEdge(GraphType& graph, unsigned int source, unsigned int target, float weight,
                           std::vector<EdgeDescriptor>& reverseEdges, std::vector<float>& capacity);
 
-  const std::vector<Polygon_2> &max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, Arrangement &arr);
+  const std::vector<int> &max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, const Arrangement &arr);
 
   const std::vector<Polygon_2> &combined_output_polygons(const std::vector<int> &groups, Arrangement &arr);
 
-  void DFS(Arrangement::Face_iterator &fit, const std::vector<int> &groups, Polygon_2 &polygon);
+  void DFS(Arrangement::Face_iterator &fit, Arrangement::Halfedge_handle shared_edge ,const std::vector<int> &groups, Polygon_2 &polygon);
 
-  const std::vector<Polygon_2> &output_polygons(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr);
+  const std::vector<Polygon_2> &output_polygons(const std::vector<int> &groups, const Arrangement &arr);
 
   const std::vector<Segment> &output_segs(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr);
 
-  void run(std::string input_path);
+  void write_to_shp(std::vector<Polygon_2>& polygons, const std::string& filename);
+
+  void run(std::string input_path, double alpha);
 
 };
 

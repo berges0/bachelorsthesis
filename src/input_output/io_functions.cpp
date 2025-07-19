@@ -106,3 +106,24 @@ void algorithm::polygons_to_svg(const std::vector<Polygon_2>& polygons, const st
     svg_file << "</svg>\n";
     svg_file.close();
 }
+
+void algorithm::write_to_shp(std::vector<Polygon_2>& polygons, const std::string& filename) {
+    std::vector<std::pair<double, double>> points(0);
+    std::vector<std::vector<int>> polys(0);
+    std::vector<int> polygon;
+    for (auto& p : polygons) {
+        polygon.clear();
+        int n = p.size();
+        if (n < 2) continue;
+        for (int i = 0; i<n; i++) {
+            double point_x = CGAL::to_double(p[i].x());
+            double point_y = CGAL::to_double(p[i].y());
+            points.emplace_back(std::make_pair(point_x, point_y));
+            polygon.emplace_back(points.size()-1);
+        }
+        polys.push_back(polygon);
+    }
+    std::cout << "THERE ARE " <<points.size() << " points" << std::endl;
+    std::cout << " AND " <<polygon.size() << " polygons" << std::endl;
+    SHPLoader::writeToShapeFile(std::make_pair(points,polys), filename);
+}

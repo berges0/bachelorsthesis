@@ -24,13 +24,13 @@ void algorithm::AddBidirectionalEdge(GraphType& graph, unsigned int source, unsi
 }
 
 //const std::vector<Polygon_2>
-const std::vector<Polygon_2> &algorithm::max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, Arrangement &arr) {
+const std::vector<int> &algorithm::max_flow(std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> &graph_data, const Arrangement &arr) {
     GraphType graph;
     int sourceId = std::get<2>(graph_data);
     int sinkId = std::get<3>(graph_data);
       unsigned int numberOfVertices = std::get<4>(graph_data)+2; // +2 for source and sink vertices
 
-      std::vector<int> groups(numberOfVertices);
+      static std::vector<int> groups(numberOfVertices);
 
       std::vector<EdgeDescriptor> reverseEdges;
 
@@ -107,10 +107,10 @@ const std::vector<Polygon_2> &algorithm::max_flow(std::tuple<std::vector<std::pa
         }
     }
     std::cout << "There are " << counter << " faces out of "<< count3<<" not in the solution although they should be" << std::endl;
-    return combined_output_polygons(groups, arr);
+    return groups;
 }
 
-const std::vector<Polygon_2> &algorithm::output_polygons(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr) {
+const std::vector<Polygon_2> &algorithm::output_polygons(const std::vector<int> &groups, const Arrangement &arr) {
     static std::vector<Polygon_2> polygons;
     int sinkId = groups[groups.size() - 1];
     for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
@@ -138,16 +138,25 @@ const std::vector<Polygon_2> &algorithm::combined_output_polygons(const std::vec
     for (Arrangement::Face_iterator fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
         if (fit->is_unbounded() || !(fit->data().yet_unvisited) || groups[fit->data().id]==0) continue;
             Polygon_2 poly;
-            DFS(fit,groups,poly);
+            DFS(fit,fit->outer_ccb(), groups,poly);
             polygons.push_back(poly);
     }
     return polygons;
 }
 
-void algorithm::DFS(Arrangement::Face_iterator &fit, const std::vector<int> &groups, Polygon_2 &polygon) {
+void algorithm::DFS(Arrangement::Face_iterator &fit, Arrangement::Halfedge_handle shared_edge ,const std::vector<int> &groups, Polygon_2 &polygon) {
     if (groups[fit->data().id]==0||fit->is_unbounded()||!(fit->data().yet_unvisited)) return;
     fit->data().yet_unvisited=false;
     Arrangement::Ccb_halfedge_circulator circ = fit->outer_ccb();
+    Arrangement::Ccb_halfedge_circulator old_start = circ;
+    do {
+        if (&(*circ) == &(*shared_edge)) {
+            // Found the exact starting edge
+            break;
+        }
+        ++circ;
+    } while (circ != old_start);
+    Arrangement::Ccb_halfedge_circulator new_start = circ;
     do {
         Arrangement::Ccb_halfedge_circulator  twin = circ->twin();
         if (groups[twin->face()->data().id]==0 || twin->face()->is_unbounded()) {
@@ -156,12 +165,30 @@ void algorithm::DFS(Arrangement::Face_iterator &fit, const std::vector<int> &gro
         }
         else if (twin->face()->data().yet_unvisited) {
             Arrangement::Face_iterator fit1 = twin->face();
-            DFS(fit1, groups, polygon);
+            DFS(fit1, twin, groups, polygon);
         }
         circ ++;
-    }while (fit->outer_ccb() != circ);
+    }while (new_start != circ);
 }
+/*
+Arrangement::Ccb_halfedge_circulator circ = b->outer_ccb();
+Arrangement::Ccb_halfedge_circulator start = circ;
+do {
+    if (&(*circ) == &(*e->twin())) {
+        // Found the exact starting edge
+        break;
+    }
+    ++circ;
+} while (circ != start);
 
+// Now `circ` starts at e->twin()
+Arrangement::Ccb_halfedge_circulator begin = circ;
+do {
+    // Traverse b's outer CCB starting from e->twin()
+    ++circ;
+} while (circ != begin);
+
+*/
 const std::vector<Segment> &algorithm::output_segs(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr) {
     static std::vector<Segment> segs;
     for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {

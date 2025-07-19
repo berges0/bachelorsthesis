@@ -29,8 +29,8 @@
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>
-
-
+#include <stdexcept>
+#include <string>
 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
