@@ -19,6 +19,8 @@
 #include <CGAL/Arrangement_with_history_2.h>
 #include <numeric>
 #include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
+
 #include <CGAL/Arr_extended_dcel.h>
 #include <typeinfo>
 #include <cmath>
@@ -154,6 +156,7 @@ typedef Traits::Curve_2 Curve;
 struct HalfedgeData
 {
     bool frompoly;
+    bool visited = false;
     /*int id;
     int orig_curve_id;
     int orig_source_id;
@@ -170,7 +173,8 @@ struct FaceData {
     int id = -1;
     bool belongs_to_poly = false;
     double area = 0.0; // Optional: area of the face, if needed
-    bool yet_unvisited = true;
+    bool visited = false;
+    bool added_hole = false; // Flag to indicate if this face has been added as a hole in a polygon
     //Default Constructor
     FaceData(): id(-1), belongs_to_poly(false), area(0) {}
     // Constructor that initializes only the ID
@@ -190,6 +194,8 @@ typedef CGAL::Arr_extended_dcel<Traits,
 typedef CGAL::Arrangement_with_history_2<Traits, DCEL>       Arrangement;
 
 typedef CGAL::Polygon_2<Kernel> Polygon_2;
+typedef CGAL::Polygon_with_holes_2<Kernel> Polygon_with_holes_2;
+
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
     boost::no_property,

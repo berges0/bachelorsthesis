@@ -25,15 +25,19 @@ add_executable(aggregator
         src/arrangement/normal_arrangement.cpp
         src/arrangement/handle_datastructures.cpp
 )
+
+# Precompile headers
 target_precompile_headers(aggregator PRIVATE include/pch.hpp)
+
 # Include paths
 target_include_directories(aggregator PRIVATE
         include
         ${Boost_INCLUDE_DIRS}
+        ${CGAL_INCLUDE_DIRS}  # CGAL include directories (should be found automatically)
 )
 
 # Link libraries
 target_link_libraries(aggregator
         PRIVATE CGAL::CGAL
-        PRIVATE instance_loader_lib
+        PRIVATE instance_loader_lib  # Ensure this is linked properly from the submodule
 )

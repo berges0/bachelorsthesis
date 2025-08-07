@@ -110,9 +110,140 @@ const std::vector<int> &algorithm::max_flow(std::tuple<std::vector<std::pair<int
     return groups;
 }
 
+const std::vector<Polygon_with_holes_2> algorithm::combined_output_polygons(const std::vector<int> &groups,
+                                                                                     Arrangement &arr) {
+    for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+        if (fit->is_unbounded()) {
+            continue; // skip unbounded faces
+        }
+        Polygon_2 test_poly;
+        auto current = fit->outer_ccb();
+        do {
+            test_poly.push_back(current->source()->point());
+            current++;
+        }while(current != fit->outer_ccb());
+        std::cout << "Face is counterclockwise " << test_poly.is_counterclockwise_oriented() << std::endl;
+    }
+
+
+
+    std::vector<Polygon_with_holes_2> polygons;
+    std::vector<Polygon_2> outer_boundaries;
+    std::vector<Polygon_2> holes;
+    for (Arrangement::Edge_iterator eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+        if (!eit->data().visited && groups[eit->face()->data().id] != 0 && groups[eit->twin()->face()->data().id] == 0) {
+            Arrangement::Halfedge_handle eit_handle = eit;
+            Polygon_2 poly = merge_contiguous_faces(eit_handle, groups, arr);
+            assert(poly.is_simple());
+            if (poly.is_counterclockwise_oriented()) {
+                outer_boundaries.emplace_back(poly);
+            } else {
+                holes.emplace_back(poly);
+            }
+        }
+    }
+    std::vector<CGAL::Bbox_2> outer_bboxes;
+    for (const auto& poly : outer_boundaries) {
+        outer_bboxes.emplace_back(poly.bbox());
+    }
+
+    std::map<int, std::vector<Polygon_2>> outer_to_holes;
+    for (int i = 0; i < holes.size(); ++i) {
+        const Polygon_2& hole = holes[i];
+        Point test_point = *hole.vertices_begin();
+        CGAL::Bbox_2 point_bbox = test_point.bbox();
+
+        for (int j = 0; j < outer_boundaries.size(); ++j) {
+            if (!CGAL::do_overlap(point_bbox, outer_bboxes[j]))
+                continue;
+
+            CGAL::Bounded_side side = CGAL::bounded_side_2(
+                outer_boundaries[j].vertices_begin(),
+                outer_boundaries[j].vertices_end(),
+                test_point,
+                Kernel());
+
+            if (side == CGAL::ON_BOUNDED_SIDE) {
+                outer_to_holes[j].emplace_back(holes[i]);  // hole i is inside outer j
+                break;
+            }
+        }
+    }
+
+    std::vector<bool> already_added (outer_boundaries.size(), false);
+    for (const auto &outer_pair : outer_to_holes) {
+        int compare = polygons.size();
+        Polygon_with_holes_2 pwh(outer_boundaries[outer_pair.first], outer_pair.second.begin(), outer_pair.second.end());
+        polygons.emplace_back(pwh);
+        already_added[outer_pair.first] = true;
+    }
+    for (int outer_boundary = 0; outer_boundary < outer_boundaries.size(); ++outer_boundary) {
+        if (!already_added[outer_boundary]) {
+            int compare = polygons.size();
+
+            Polygon_with_holes_2 pwh(outer_boundaries[outer_boundary]);
+            polygons.emplace_back(pwh);
+
+        }
+    }
+    return polygons;
+}
+
+int glob_count = 0;
+
+const Polygon_2 algorithm::merge_contiguous_faces(Arrangement::Halfedge_handle &edge, const std::vector<int> &groups, Arrangement &arr ) {
+    int count = 0;
+    assert(groups[edge->face()->data().id] != 0 && groups[edge->twin()->face()->data().id] == 0);
+    Polygon_2 polygon;
+    do {
+
+        if (groups[edge->twin()->face()->data().id] == 0 || edge->twin()->face()->is_unbounded()) {
+            //assert(edge->data().visited==false);
+            polygon.push_back(edge->source()->point());
+            count++;
+            if (edge->target()->point() == *(polygon.vertices_begin())) {
+                polygon.push_back(edge->target()->point());
+                return polygon; // finished
+
+            }
+            edge = edge->next();
+        }
+        else if (groups[edge->twin()->face()->data().id] != 0) {
+            edge = edge->twin()->next();
+        }
+    }while (true);
+
+}
+
+
+/*
+const std::vector<Polygon_2> algorithm::get_holes(Arrangement::Halfedge_handle &edge, const std::vector<int> &groups, Arrangement &arr ) {
+    Arrangement::Halfedge_handle current = edge;
+    Arrangement::Halfedge_handle start = current;
+
+    do {
+
+    }while
+
+    do {
+        while (current->data().outer == true && current->data().visited == true) {
+            current = current->next();
+        }
+        auto start = current->prev();
+        do{
+            if (groups[current->face()->data().id]==0) {
+                
+            }
+            current = current->next();
+        }while (current->prev() != start);
+
+
+    }
+}*/
+
+
 const std::vector<Polygon_2> &algorithm::output_polygons(const std::vector<int> &groups, const Arrangement &arr) {
     static std::vector<Polygon_2> polygons;
-    int sinkId = groups[groups.size() - 1];
     for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
         if (fit->is_unbounded() || groups[fit->data().id]==0) continue; // skip unbounded faces
         Polygon_2 poly;
@@ -133,62 +264,6 @@ const std::vector<Polygon_2> &algorithm::output_polygons(const std::vector<int> 
     return polygons;
 }
 
-const std::vector<Polygon_2> &algorithm::combined_output_polygons(const std::vector<int> &groups, Arrangement &arr) {
-    static std::vector<Polygon_2> polygons;
-    for (Arrangement::Face_iterator fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-        if (fit->is_unbounded() || !(fit->data().yet_unvisited) || groups[fit->data().id]==0) continue;
-            Polygon_2 poly;
-            DFS(fit,fit->outer_ccb(), groups,poly);
-            polygons.push_back(poly);
-    }
-    return polygons;
-}
-
-void algorithm::DFS(Arrangement::Face_iterator &fit, Arrangement::Halfedge_handle shared_edge ,const std::vector<int> &groups, Polygon_2 &polygon) {
-    if (groups[fit->data().id]==0||fit->is_unbounded()||!(fit->data().yet_unvisited)) return;
-    fit->data().yet_unvisited=false;
-    Arrangement::Ccb_halfedge_circulator circ = fit->outer_ccb();
-    Arrangement::Ccb_halfedge_circulator old_start = circ;
-    do {
-        if (&(*circ) == &(*shared_edge)) {
-            // Found the exact starting edge
-            break;
-        }
-        ++circ;
-    } while (circ != old_start);
-    Arrangement::Ccb_halfedge_circulator new_start = circ;
-    do {
-        Arrangement::Ccb_halfedge_circulator  twin = circ->twin();
-        if (groups[twin->face()->data().id]==0 || twin->face()->is_unbounded()) {
-            polygon.push_back(circ->curve().source());
-            polygon.push_back(circ->curve().target());
-        }
-        else if (twin->face()->data().yet_unvisited) {
-            Arrangement::Face_iterator fit1 = twin->face();
-            DFS(fit1, twin, groups, polygon);
-        }
-        circ ++;
-    }while (new_start != circ);
-}
-/*
-Arrangement::Ccb_halfedge_circulator circ = b->outer_ccb();
-Arrangement::Ccb_halfedge_circulator start = circ;
-do {
-    if (&(*circ) == &(*e->twin())) {
-        // Found the exact starting edge
-        break;
-    }
-    ++circ;
-} while (circ != start);
-
-// Now `circ` starts at e->twin()
-Arrangement::Ccb_halfedge_circulator begin = circ;
-do {
-    // Traverse b's outer CCB starting from e->twin()
-    ++circ;
-} while (circ != begin);
-
-*/
 const std::vector<Segment> &algorithm::output_segs(const std::vector<int> &groups, VertexDescriptor source, const Arrangement &arr) {
     static std::vector<Segment> segs;
     for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {

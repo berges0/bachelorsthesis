@@ -37,8 +37,11 @@ int main(int argc, char* argv[]) {
 
     algorithm algo;
     algo.run(input_path, alpha);
-    std::string output_path = "/home/berges0/Uni/bachelorsthesis/build/shp/shp_output.shp";
-    std::string command = "qgis " + output_path + " &";
-    int i = std::system(command.c_str());
+    std::string output_path = "/home/samuel-berge/Work/bachelorsthesis/build/shp/shp_output.shp";
+    std::string command1 = "qgis " + input_path + " &";
+    std::string command2 = "qgis " + output_path + " &";
+    int i = std::system(command1.c_str());
+    int j = std::system(command2.c_str());
+
     return 0;
 }
