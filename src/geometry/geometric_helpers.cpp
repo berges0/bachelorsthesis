@@ -11,3 +11,4 @@ double algorithm::calculate_length(const Arrangement::Halfedge_const_handle& he)
     auto squared_length = dx*dx + dy*dy;
     return std::sqrt(CGAL::to_double(squared_length));
 }
+

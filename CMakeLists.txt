@@ -21,6 +21,7 @@ add_executable(aggregator
         src/graph/max_flow.cpp
         src/graph/buildgraph.cpp
         src/geometry/normal_extension.cpp
+        src/geometry/threshold_extension.cpp
         src/geometry/geometric_helpers.cpp
         src/arrangement/normal_arrangement.cpp
         src/arrangement/handle_datastructures.cpp

@@ -119,7 +119,7 @@ void algorithm::run(std::string input_path, double alpha) {
     add_box(segments_w_info, transformed_to_segments.second);
     std::vector<Segment> segments= segs_wo_info(segments_w_info);
     segments_to_svg(segments,"original.svg");
-    auto extended_segs = ray_shoot_intersection(segments_w_info);
+    auto extended_segs = ray_shoot_intersection_limited(segments_w_info);
     std::cout<<"Extended Segments size: "<<extended_segs.size()<<std::endl;
     segments_to_svg(segs_wo_info(extended_segs),"extended.svg");
     

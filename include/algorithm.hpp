@@ -25,7 +25,12 @@ public:
 
     std::vector<Segment_w_info> ray_shoot_intersection(const std::vector<Segment_w_info>& segments);
 
+    std::optional<Point> nearest_intersection_in_direction_limited(const Point& origin,
+        const Vector& direction,
+        const Tree& tree,
+        const Segment* self_segment);
 
+    std::vector<Segment_w_info> ray_shoot_intersection_limited(const std::vector<Segment_w_info>& segments);
 
     Arrangement &build_arrangement(std::vector<Segment_w_info> segments);
 
