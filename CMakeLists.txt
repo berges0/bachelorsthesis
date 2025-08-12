@@ -16,19 +16,18 @@ find_package(CGAL REQUIRED)
 # Your executable
 add_executable(aggregator
         src/main.cpp
-        src/algorithm.cpp
-        src/input_output/io_functions.cpp
-        src/graph/max_flow.cpp
-        src/graph/buildgraph.cpp
-        src/geometry/normal_extension.cpp
-        src/geometry/threshold_extension.cpp
-        src/geometry/geometric_helpers.cpp
-        src/arrangement/normal_arrangement.cpp
-        src/arrangement/handle_datastructures.cpp
+        src/core/arrangement.cpp
+        src/core/edge_extension.cpp
+        src/core/graph.cpp
+        src/core/max_flow.cpp
+        src/io/chrono_io.cpp
+        src/io/cl_parser.cpp
+        src/io/io_functions.cpp
+        src/utils/logger.cpp
 )
 
 # Precompile headers
-target_precompile_headers(aggregator PRIVATE include/pch.hpp)
+target_precompile_headers(aggregator PRIVATE include/utils/pch.hpp)
 
 # Include paths
 target_include_directories(aggregator PRIVATE
