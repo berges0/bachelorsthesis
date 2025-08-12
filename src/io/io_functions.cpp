@@ -1,0 +1,339 @@
+//
+// Created by samuel-berge on 8/11/25.
+//
+#include "io/io_functions.hpp"
+//
+// Created by samuel-berge on 8/10/25.
+//
+
+namespace IO_FUNCTIONS {
+
+    //CONTROVERSION FROM SHAPEFILEAGGREGATIONLOADER TO CGAL DATASTRUCTURE
+
+    std::vector<Segment_w_info> &read_in_segment(const std::vector<SHPLoader::Point2D>& points,
+        const std::vector<std::vector<int>>& polygons) {
+
+        static std::vector<Segment_w_info> segments;
+        int id=0;
+        for (const auto &poly:polygons) {
+
+            int n = poly.size();
+            if(n<2) continue;
+
+            if(n==2){
+                segments.emplace_back(Segment_w_info(Segment( Point(points[poly[0]].x, points[poly[0]].y), Point(points[poly[1]].x, points[poly[1]].y)), true, id++, true, true));
+            }
+
+            bool backward_shoot;
+            if (CGAL::orientation(Point(points[poly[n-1]].x, points[poly[n-1]].y), Point(points[poly[0]].x, points[poly[0]].y), Point(points[poly[1]].x, points[poly[1]].y)) == CGAL::RIGHT_TURN) {
+                backward_shoot=false;
+
+            }
+            else if (CGAL::orientation(Point(points[poly[n-1]].x, points[poly[n-1]].y), Point(points[poly[0]].x, points[poly[0]].y), Point(points[poly[1]].x, points[poly[1]].y)) == CGAL::LEFT_TURN) {
+                backward_shoot=true;
+            }
+            else{
+                throw std::runtime_error("instance error: straight line consists of more than one edge");
+            }
+
+            bool forward_shoot;
+
+            for(int i=0; i<n; i++){
+
+                Point pt1(points[poly[i]].x, points[poly[i]].y);
+                Point pt2(points[poly[((i+1) % n)]].x, points[poly[((i+1) % n)]].y);
+                Point pt3(points[poly[((i+2) % n)]].x, points[poly[((i+2) % n)]].y);
+
+                if (CGAL::orientation(pt1, pt2, pt3) == CGAL::RIGHT_TURN) {
+                    forward_shoot=false;
+
+                } else if (CGAL::orientation(pt1, pt2, pt3) == CGAL::LEFT_TURN) {
+                    forward_shoot=true;
+                } else{std::cerr<<"ERROR";}
+
+                segments.emplace_back(Segment_w_info(Segment(pt1,pt2), true, id++, backward_shoot, forward_shoot));
+                backward_shoot=forward_shoot;
+            }
+        }
+        return segments;
+    }
+
+
+    //SVG FILES
+
+    void segments_to_svg(const std::vector<Segment>& segments, const std::string& filename) {
+
+        double minX = std::numeric_limits<double>::max();
+        double maxX = std::numeric_limits<double>::lowest();
+        double minY = std::numeric_limits<double>::max();
+        double maxY = std::numeric_limits<double>::lowest();
+
+        for (const auto& s : segments) {
+            minX = std::min({minX, CGAL::to_double(s.source().x()), CGAL::to_double(s.target().x())});
+            maxX = std::max({maxX, CGAL::to_double(s.source().x()), CGAL::to_double(s.target().x())});
+            minY = std::min({minY, CGAL::to_double(s.source().y()), CGAL::to_double(s.target().y())});
+            maxY = std::max({maxY, CGAL::to_double(s.source().y()), CGAL::to_double(s.target().y())});
+        }
+
+        double padding = 10.0; // Adjust based on your coordinate range
+        minX -= padding;
+        maxX += padding;
+        minY -= padding;
+        maxY += padding;
+
+        double width = maxX - minX;
+        double height = maxY - minY;
+
+        std::ofstream svg_file(filename);
+        svg_file << std::fixed << std::setprecision(10); // HIGH precision output
+        double pixel_width = 1000.0;
+        double aspect_ratio = height / width;
+        double pixel_height = pixel_width * aspect_ratio;
+        double scale = pixel_width / width; // pixel per unit
+        double stroke_width_units = 1.0 / scale; // 1 screen pixel = X world units
+
+        svg_file << "<svg xmlns=\"http://www.w3.org/2000/svg\" "
+                 << "viewBox=\"" << minX << " " << minY << " " << width << " " << height << "\" "
+                 << "width=\"" << pixel_width << "\" height=\"" << pixel_height << "\" "
+                 << "preserveAspectRatio=\"xMidYMid meet\" "
+                 << "fill=\"none\" stroke=\"black\" stroke-width=\"" << stroke_width_units << "\">\n";
+
+
+        for (const auto& s : segments) {
+            svg_file << "<line x1=\"" << s.source().x() << "\" y1=\"" << (maxY -(s.source().y()- minY))
+                     << "\" x2=\"" << s.target().x() << "\" y2=\"" << (maxY - (s.target().y() - minY))
+                     << "\" />\n";
+        }
+
+        svg_file << "</svg>\n";
+
+        svg_file.close();
+    }
+
+    void polygons_to_svg(const std::vector<Polygon_with_holes_2>& polygons, const std::string& filename) {
+
+        double minX = std::numeric_limits<double>::max();
+    double maxX = std::numeric_limits<double>::lowest();
+    double minY = std::numeric_limits<double>::max();
+    double maxY = std::numeric_limits<double>::lowest();
+
+    // Compute bounding box over all outer and hole polygons
+    for (const auto& pwh : polygons) {
+        for (const auto& p : pwh.outer_boundary()) {
+            double x = CGAL::to_double(p.x());
+            double y = CGAL::to_double(p.y());
+            minX = std::min(minX, x);
+            maxX = std::max(maxX, x);
+            minY = std::min(minY, y);
+            maxY = std::max(maxY, y);
+        }
+        for (auto hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+            for (const auto& p : *hit) {
+                double x = CGAL::to_double(p.x());
+                double y = CGAL::to_double(p.y());
+                minX = std::min(minX, x);
+                maxX = std::max(maxX, x);
+                minY = std::min(minY, y);
+                maxY = std::max(maxY, y);
+            }
+        }
+    }
+
+    double padding = 10.0;
+    minX -= padding;
+    maxX += padding;
+    minY -= padding;
+    maxY += padding;
+
+    double width = maxX - minX;
+    double height = maxY - minY;
+
+    std::ofstream svg_file(filename);
+    svg_file << std::fixed << std::setprecision(10);
+
+    double pixel_width = 1000.0;
+    double aspect_ratio = height / width;
+    double pixel_height = pixel_width * aspect_ratio;
+    double scale = pixel_width / width;
+    double stroke_width_units = 1.0 / scale;
+
+    svg_file << "<svg xmlns=\"http://www.w3.org/2000/svg\" "
+             << "viewBox=\"" << minX << " " << minY << " " << width << " " << height << "\" "
+             << "width=\"" << pixel_width << "\" height=\"" << pixel_height << "\" "
+             << "preserveAspectRatio=\"xMidYMid meet\" "
+             << "fill=\"none\" stroke=\"black\" stroke-width=\"" << stroke_width_units << "\">\n";
+
+    for (const auto& pwh : polygons) {
+        // Outer boundary
+        svg_file << "<polygon points=\"";
+        for (const auto& p : pwh.outer_boundary()) {
+            double x = CGAL::to_double(p.x());
+            double y = CGAL::to_double(p.y());
+            svg_file << x << "," << (maxY - (y - minY)) << " ";
+        }
+        svg_file << "\" fill=\"lightgray\" stroke=\"black\"/>\n";
+
+        // Holes
+        for (auto hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+            svg_file << "<polygon points=\"";
+            for (const auto& p : *hit) {
+                double x = CGAL::to_double(p.x());
+                double y = CGAL::to_double(p.y());
+                svg_file << x << "," << (maxY - (y - minY)) << " ";
+            }
+            svg_file << "\" fill=\"white\" stroke=\"black\"/>\n";
+        }
+    }
+
+    svg_file << "</svg>\n";
+    svg_file.close();
+    }
+
+    //SHP FILES
+
+    void write_to_shp(const std::vector<Polygon_with_holes_2>& polygons, const std::string& filename) {
+
+        std::vector<std::pair<double, double>> points;
+        std::vector<std::vector<int>> polys;
+
+        std::vector<int> polygon_indices;
+
+        for (const auto& pwh : polygons) {
+            // Outer boundary
+            polygon_indices.clear();
+            for (const auto& p : pwh.outer_boundary()) {
+                double x = CGAL::to_double(p.x());
+                double y = CGAL::to_double(p.y());
+                points.emplace_back(x, y);
+                polygon_indices.emplace_back(points.size() - 1);
+            }
+            polys.push_back(polygon_indices);
+
+            // Holes
+            for (auto hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+                polygon_indices.clear();
+                for (const auto& p : *hit) {
+                    double x = CGAL::to_double(p.x());
+                    double y = CGAL::to_double(p.y());
+                    points.emplace_back(x, y);
+                    polygon_indices.emplace_back(points.size() - 1);
+                }
+                polys.push_back(polygon_indices);
+            }
+        }
+
+        std::cout << "THERE ARE " << points.size() << " points" << std::endl;
+        std::cout << "AND " << polys.size() << " polygons (including holes)" << std::endl;
+
+        SHPLoader::writeToShapeFile(std::make_pair(points, polys), filename);
+    }
+
+    //CONVERT SOLUTION POLYGONS TO CONTIGUOUS POLYGONS
+
+
+    const std::vector<Polygon_with_holes_2> &combine_polygons(const std::vector<bool>
+        &groups, Arrangement &arr) {
+
+        static std::vector<Polygon_2> outer_boundaries;
+        static std::vector<Polygon_2> holes;
+        for (Arrangement::Edge_iterator eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+            if (!eit->data().visited && groups[eit->face()->data().id] && !groups[eit->twin()->face()->data().id]) {
+                Arrangement::Halfedge_handle eit_handle = eit;
+                Polygon_2 poly = get_contiguous_boundary(eit_handle, groups, arr);
+                assert(poly.is_simple());
+                if (poly.is_counterclockwise_oriented()) {
+                    outer_boundaries.emplace_back(poly);
+                } else {
+                    holes.emplace_back(poly);
+                }
+            }
+        }
+
+        auto outer_to_holes = locate_holes(outer_boundaries, holes);
+
+        return create_polygons_with_holes(outer_to_holes, outer_boundaries);
+    }
+
+    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &groups,
+        Arrangement &arr) {
+
+        assert(groups[edge->face()->data().id] && !groups[edge->twin()->face()->data().id]);
+        Polygon_2 polygon;
+        do {
+
+            if (!groups[edge->twin()->face()->data().id] || edge->twin()->face()->is_unbounded()) {
+                //assert(edge->data().visited==false);
+                polygon.push_back(edge->source()->point());
+                if (edge->target()->point() == *(polygon.vertices_begin())) {
+                    polygon.push_back(edge->target()->point()); //actually shouldn't be necessary
+                    return polygon; // finished
+                }
+                edge = edge->next();
+            }
+            else if (groups[edge->twin()->face()->data().id]) {
+                edge = edge->twin()->next();
+            }
+        }while (true);
+
+    }
+
+    const std::map<int, std::vector<Polygon_2>> &locate_holes(const std::vector<Polygon_2> &outer_boundaries,
+        const std::vector<Polygon_2> &holes) {
+
+        std::vector<CGAL::Bbox_2> outer_bboxes;
+        for (const auto& poly : outer_boundaries) {
+            outer_bboxes.emplace_back(poly.bbox());
+        }
+
+        static std::map<int, std::vector<Polygon_2>> outer_to_holes;
+        for (int i = 0; i < holes.size(); ++i) {
+            const Polygon_2& hole = holes[i];
+            Point test_point = *hole.vertices_begin();
+            CGAL::Bbox_2 point_bbox = test_point.bbox();
+
+            for (int j = 0; j < outer_boundaries.size(); ++j) {
+                if (!CGAL::do_overlap(point_bbox, outer_bboxes[j]))
+                    continue;
+
+                CGAL::Bounded_side side = CGAL::bounded_side_2(
+                    outer_boundaries[j].vertices_begin(),
+                    outer_boundaries[j].vertices_end(),
+                    test_point,
+                    Kernel());
+
+                if (side == CGAL::ON_BOUNDED_SIDE) {
+                    outer_to_holes[j].emplace_back(holes[i]);  // hole i is inside outer j
+                    break;
+                }
+            }
+        }
+        return outer_to_holes;
+    }
+
+    const std::vector<Polygon_with_holes_2> &create_polygons_with_holes(const std::map<int, std::vector<Polygon_2>>
+        &outer_to_holes, const std::vector<Polygon_2> &outer_boundaries) {
+
+        static std::vector<Polygon_with_holes_2> polygons;
+
+        std::vector<bool> already_added (outer_boundaries.size(), false);
+        for (const auto &outer_pair : outer_to_holes) {
+            int compare = polygons.size();
+            Polygon_with_holes_2 pwh(outer_boundaries[outer_pair.first], outer_pair.second.begin(), outer_pair.second.end());
+            polygons.emplace_back(pwh);
+            already_added[outer_pair.first] = true;
+        }
+        for (int outer_boundary = 0; outer_boundary < outer_boundaries.size(); ++outer_boundary) {
+            if (!already_added[outer_boundary]) {
+                int compare = polygons.size();
+
+                Polygon_with_holes_2 pwh(outer_boundaries[outer_boundary]);
+                polygons.emplace_back(pwh);
+
+            }
+        }
+        return polygons;
+    }
+
+}
+
+
