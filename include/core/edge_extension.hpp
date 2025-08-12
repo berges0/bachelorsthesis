@@ -14,14 +14,14 @@ namespace EDGE_EXTENSION {
 
     void add_outer_box(std::vector<Segment_w_info>& segments);
 
-    const std::vector<Segment_w_info> &edge_extension(std::vector<Segment_w_info>& segments, std::string version);
+    const std::vector<Segment_w_info> &edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold);
 
     namespace STANDARD {
         const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments);
     }
 
     namespace LIMITED{
-        const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments);
+        const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments, double threshold);
 
         void post_process(std::vector<Segment_w_info>& segments);
     }
@@ -30,6 +30,9 @@ namespace EDGE_EXTENSION {
     const Vector& direction,
     const Tree& tree,
     const Segment* self_segment);
+
+    double get_distance(Point p1, Point p2);
+
 }
 
 

@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
 
     std::string version = clParser.getVersion();
     double alpha = clParser.getAlpha();
+    double threshold = 4; // Default threshold for limited version
 
     auto data = SHPLoader::ReadShapeFileToPoint2D(clParser.inputFileName());
 
@@ -41,7 +42,9 @@ int main(int argc, char **argv) {
 
     EDGE_EXTENSION::add_outer_box(input_segments);
 
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::edge_extension(input_segments, version);
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::edge_extension(input_segments, version, threshold);
+
+    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
 
     Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments);
 

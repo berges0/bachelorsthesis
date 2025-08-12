@@ -6,12 +6,12 @@
 
 namespace EDGE_EXTENSION {
 
-    const std::vector<Segment_w_info> &edge_extension(std::vector<Segment_w_info>& segments, std::string version) {
+    const std::vector<Segment_w_info> &edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold) {
         if (version == "0") {
             return STANDARD::extension(segments);
         }
         if (version == "1") {
-            return LIMITED::extension(segments);
+            return LIMITED::extension(segments, threshold);
         }
         else {
             throw std::runtime_error("Unknown version: " + version);
@@ -62,12 +62,69 @@ namespace EDGE_EXTENSION {
     }
 
     namespace LIMITED{
-        const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments) {
-            return segments;
-            post_process(segments);
+        const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments, double threshold) {
+            std::vector<Segment> just_segments = filter_segments(segments);
+            Tree tree(just_segments.begin(), just_segments.end());
+            tree.build();
+
+            static std::vector<Segment_w_info> all_segments = segments;
+
+            int count = 0;
+            for (const Segment& segment : just_segments) {
+                Line line(segment);
+                Point p1 = segment.source();
+                Point p2 = segment.target();
+                //std::cout << p1.x() << ", "<< p1.y() << " / " << p2.x() <<", "<< p2.y() << "\n";
+
+                Vector forward = p1 - p2;
+                Vector backward = p2 - p1;
+
+                double max_distance = threshold * get_distance(p1,p2);
+                if (segments[count].shoot_source) {
+                    auto hit_forward = first_intersection(p1, forward, tree, &segment);
+                    if (!hit_forward || get_distance(p1, *hit_forward) > max_distance) {
+
+                        Kernel::FT sq = forward.squared_length();
+                        if (sq != Kernel::FT(0)) {
+                            double len = std::sqrt(CGAL::to_double(sq));           // make FT explicit
+                            double scale = max_distance / len;          // length exactly = max_distance
+                            Point target = p1 + forward * Kernel::FT(scale);
+                            all_segments.emplace_back(
+                                Segment_w_info(Segment(p1, target), false, -1, false, false)
+                            );
+                        }
+                        //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
+                    }
+                    else if (hit_forward && get_distance(p1, *hit_forward) <= max_distance) {
+                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_forward), false, -1, false,false));
+                    }
+                }
+
+                if (segments[count].shoot_target) {
+                    auto hit_backward = first_intersection(p2, backward, tree, &segment);
+                    if (!hit_backward || get_distance(p1, *hit_backward) > max_distance) {
+
+                        Kernel::FT sq = backward.squared_length();
+                        if (sq != Kernel::FT(0)) {
+                            double len = std::sqrt(CGAL::to_double(sq));           // make FT explicit
+                            double scale = max_distance / len;          // length exactly = max_distance
+                            Point target = p1 + backward * Kernel::FT(scale);
+                            all_segments.emplace_back(
+                                Segment_w_info(Segment(p1, target), false, -1, false, false)
+                            );
+                        }
+                        //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
+                    }
+                    else if (hit_backward && get_distance(p1, *hit_backward) <= max_distance) {
+                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_backward), false, -1, false,false));
+                    }
+                }
+                count++;
+            }
+            return all_segments;
         }
 
-        void post_process(std::vector<Segment_w_info>& segments) {
+        void post_process(std::vector<Segment_w_info>& segments, std::vector<bool>& to_prune) {
         }
     }
 
@@ -124,12 +181,12 @@ namespace EDGE_EXTENSION {
         }
         // Create the outer box segments
         int id = segments.size();
-        double set_off_x = 0.01*(maxX - minX);
-        double set_off_y = 0.01*(maxY - minY);
+        double set_off_x = 1;
+        double set_off_y = 1;
         Point blc(minX-set_off_x, minY-set_off_y);
         Point tlc(minX-set_off_x, maxY+set_off_y);
         Point trc(maxX+set_off_x, maxY+set_off_y);
-        Point brc(maxX+set_off_x, maxY-set_off_y);
+        Point brc(maxX+set_off_x, minY-set_off_y);
 
         Segment_w_info edge1(Segment(blc, tlc), false, id++,false,false);
         Segment_w_info edge2(Segment(tlc, trc), false, id++,false,false);
@@ -139,6 +196,15 @@ namespace EDGE_EXTENSION {
         segments.push_back(edge2);
         segments.push_back(edge3);
         segments.push_back(edge4);
+    }
+
+    double get_distance(Point p1, Point p2) {
+
+        auto dx = p2.x() - p1.x();
+        auto dy = p2.y() - p1.y();
+
+        auto squared_length = dx*dx + dy*dy;
+        return std::sqrt(CGAL::to_double(squared_length));
     }
 
 }

@@ -233,7 +233,7 @@ namespace IO_FUNCTIONS {
 
     const std::vector<Polygon_with_holes_2> &combine_polygons(const std::vector<bool>
         &groups, Arrangement &arr) {
-
+        std::cout<<"GROUPSSIZE"<<groups.size()<<std::endl;
         static std::vector<Polygon_2> outer_boundaries;
         static std::vector<Polygon_2> holes;
         for (Arrangement::Edge_iterator eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
