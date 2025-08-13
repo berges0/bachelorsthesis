@@ -248,7 +248,6 @@ namespace IO_FUNCTIONS {
             }
 
         }
-
         std::cout<<"NR OF POLYGONS"<<outer_boundaries.size()<<std::endl;
         std::cout<<"NR OF HOLES "<<holes.size()<<std::endl;
         auto outer_to_holes = locate_holes(outer_boundaries, holes);
@@ -256,18 +255,15 @@ namespace IO_FUNCTIONS {
         return create_polygons_with_holes(outer_to_holes, outer_boundaries);
     }
 
-    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &groups,
-        Arrangement &arr) {
+    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &groups) {
 
-        assert(groups[edge->face()->data().id] && !groups[edge->twin()->face()->data().id]);
+        assert(groups[edge->face()->data().id] && (!groups[edge->twin()->face()->data().id])||edge->twin()->face()->is_unbounded());
         Polygon_2 polygon;
         do {
-
+            edge->data().visited = true;
             if (!groups[edge->twin()->face()->data().id] || edge->twin()->face()->is_unbounded()) {
-                edge->data().visited = true;
                 polygon.push_back(edge->source()->point());
                 if (edge->target()->point() == *(polygon.vertices_begin())) {
-                    polygon.push_back(edge->target()->point()); //actually shouldn't be necessary
                     return polygon; // finished
                 }
                 edge = edge->next();
