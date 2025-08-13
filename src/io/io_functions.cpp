@@ -237,8 +237,9 @@ namespace IO_FUNCTIONS {
         static std::vector<Polygon_2> outer_boundaries;
         static std::vector<Polygon_2> holes;
         for (Arrangement::Halfedge_iterator eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit) {
-            if (!eit->data().visited && groups[eit->face()->data().id] && !groups[eit->twin()->face()->data().id]) {
-                Polygon_2 poly = get_contiguous_boundary(eit, groups, arr);
+            auto eitc = eit;
+            if (!eitc->data().visited && groups[eitc->face()->data().id] && (!groups[eitc->twin()->face()->data().id]||eitc->twin()->face()->is_unbounded())) {
+                Polygon_2 poly = get_contiguous_boundary(eitc, groups);
                 assert(poly.is_simple());
                 if (poly.is_counterclockwise_oriented()) {
                     outer_boundaries.emplace_back(poly);
