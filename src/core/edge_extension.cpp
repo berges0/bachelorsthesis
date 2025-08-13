@@ -2,7 +2,10 @@
 // Created by samuel-berge on 8/11/25.
 //
 #include "core/edge_extension.hpp"
+
 #include <algorithm>
+
+#include "io/io_functions.hpp"
 
 namespace EDGE_EXTENSION {
 
@@ -144,7 +147,7 @@ namespace EDGE_EXTENSION {
 
                     auto hit = first_intersection(P2, dir, tree, &just_segments[i]);
                     if (hit) {
-                        if (get_distance(P1,*hit)<get_distance(P1,P2)){
+                        if (get_distance(P2,*hit)<get_distance(P1,P2)){
                             //std::cout << "Pruning segment: " << P1 << " to " << P2 << " to " << *hit << std::endl;
                             pruned_segments.emplace_back(Segment_w_info(Segment(P1, *hit), false, -1, false,false));
                         }
