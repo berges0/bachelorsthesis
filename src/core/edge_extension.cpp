@@ -68,7 +68,7 @@ namespace EDGE_EXTENSION {
             tree.build();
 
             static std::vector<Segment_w_info> all_segments = segments;
-
+            std::vector<bool> to_prune(segments.size(), false);
             int count = 0;
             for (const Segment& segment : just_segments) {
                 Line line(segment);
@@ -92,39 +92,69 @@ namespace EDGE_EXTENSION {
                             all_segments.emplace_back(
                                 Segment_w_info(Segment(p1, target), false, -1, false, false)
                             );
+                            to_prune.push_back(true);
                         }
-                        //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
                     }
                     else if (hit_forward && get_distance(p1, *hit_forward) <= max_distance) {
                         all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_forward), false, -1, false,false));
+                        to_prune.push_back(false);
                     }
                 }
 
                 if (segments[count].shoot_target) {
                     auto hit_backward = first_intersection(p2, backward, tree, &segment);
-                    if (!hit_backward || get_distance(p1, *hit_backward) > max_distance) {
+                    if (!hit_backward || get_distance(p2, *hit_backward) > max_distance) {
 
                         Kernel::FT sq = backward.squared_length();
                         if (sq != Kernel::FT(0)) {
                             double len = std::sqrt(CGAL::to_double(sq));           // make FT explicit
                             double scale = max_distance / len;          // length exactly = max_distance
-                            Point target = p1 + backward * Kernel::FT(scale);
+                            Point target = p2 + backward * Kernel::FT(scale);
                             all_segments.emplace_back(
-                                Segment_w_info(Segment(p1, target), false, -1, false, false)
+                                Segment_w_info(Segment(p2, target), false, -1, false, false)
                             );
+                            to_prune.push_back(true);
+
                         }
                         //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
                     }
-                    else if (hit_backward && get_distance(p1, *hit_backward) <= max_distance) {
-                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_backward), false, -1, false,false));
+                    else if (hit_backward && get_distance(p2, *hit_backward) <= max_distance) {
+                        all_segments.emplace_back(Segment_w_info(Segment(p2, *hit_backward), false, -1, false,false));
+                        to_prune.push_back(false);
+
                     }
                 }
                 count++;
             }
-            return all_segments;
+
+            return post_process(all_segments, to_prune);
         }
 
-        void post_process(std::vector<Segment_w_info>& segments, std::vector<bool>& to_prune) {
+        const std::vector<Segment_w_info> &post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune) {
+            std::vector<Segment> just_segments = filter_segments(segments);
+            Tree tree(just_segments.begin(), just_segments.end());
+            tree.build();
+            static std::vector<Segment_w_info> pruned_segments;
+            for (size_t i = 0; i < segments.size(); ++i) {
+                if (to_prune[i]){
+                    Point P1 = segments[i].seg.source();
+                    Point P2 = segments[i].seg.target();
+
+                    Vector dir = P1 - P2;
+
+                    auto hit = first_intersection(P2, dir, tree, &just_segments[i]);
+                    if (hit) {
+                        if (get_distance(P1,*hit)<get_distance(P1,P2)){
+                            //std::cout << "Pruning segment: " << P1 << " to " << P2 << " to " << *hit << std::endl;
+                            pruned_segments.emplace_back(Segment_w_info(Segment(P1, *hit), false, -1, false,false));
+                        }
+                    }
+                }
+                else {
+                    pruned_segments.emplace_back(segments[i]);
+                }
+            }
+            return pruned_segments;
         }
     }
 

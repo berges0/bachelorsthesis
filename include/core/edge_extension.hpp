@@ -23,7 +23,7 @@ namespace EDGE_EXTENSION {
     namespace LIMITED{
         const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments, double threshold);
 
-        void post_process(std::vector<Segment_w_info>& segments);
+        const std::vector<Segment_w_info> &post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune);
     }
 
     std::optional<Point> first_intersection(const Point& origin,

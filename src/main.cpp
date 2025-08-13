@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
     std::vector<Polygon_with_holes_2> output_data = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
 
-    IO_FUNCTIONS::write_to_shp(output_data, clParser.outputFileName());
+    IO_FUNCTIONS::writeToShapeFile(output_data, clParser.outputFileName());
 
     std::string command1 = "qgis " + clParser.inputFileName() + " &";
     std::string command2 = "qgis " + clParser.outputFileName() + " &";

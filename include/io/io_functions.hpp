@@ -25,6 +25,8 @@ namespace IO_FUNCTIONS {
 
     void write_to_shp(const std::vector<Polygon_with_holes_2>& polygons, const std::string& filename);
 
+    void writeToShapeFile(std::vector<Polygon_with_holes_2> polys, std::string path);
+
 //CONVERT SOLUTION POLYGONS TO CONTIGUOUS POLYGONS
 
     const std::vector<Polygon_with_holes_2> &combine_polygons(const std::vector<bool>

@@ -236,10 +236,9 @@ namespace IO_FUNCTIONS {
         std::cout<<"GROUPSSIZE"<<groups.size()<<std::endl;
         static std::vector<Polygon_2> outer_boundaries;
         static std::vector<Polygon_2> holes;
-        for (Arrangement::Edge_iterator eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+        for (Arrangement::Halfedge_iterator eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit) {
             if (!eit->data().visited && groups[eit->face()->data().id] && !groups[eit->twin()->face()->data().id]) {
-                Arrangement::Halfedge_handle eit_handle = eit;
-                Polygon_2 poly = get_contiguous_boundary(eit_handle, groups, arr);
+                Polygon_2 poly = get_contiguous_boundary(eit, groups, arr);
                 assert(poly.is_simple());
                 if (poly.is_counterclockwise_oriented()) {
                     outer_boundaries.emplace_back(poly);
@@ -247,8 +246,11 @@ namespace IO_FUNCTIONS {
                     holes.emplace_back(poly);
                 }
             }
+
         }
 
+        std::cout<<"NR OF POLYGONS"<<outer_boundaries.size()<<std::endl;
+        std::cout<<"NR OF HOLES "<<holes.size()<<std::endl;
         auto outer_to_holes = locate_holes(outer_boundaries, holes);
 
         return create_polygons_with_holes(outer_to_holes, outer_boundaries);
@@ -262,7 +264,7 @@ namespace IO_FUNCTIONS {
         do {
 
             if (!groups[edge->twin()->face()->data().id] || edge->twin()->face()->is_unbounded()) {
-                //assert(edge->data().visited==false);
+                edge->data().visited = true;
                 polygon.push_back(edge->source()->point());
                 if (edge->target()->point() == *(polygon.vertices_begin())) {
                     polygon.push_back(edge->target()->point()); //actually shouldn't be necessary
@@ -333,6 +335,87 @@ namespace IO_FUNCTIONS {
         }
         return polygons;
     }
+
+void writeToShapeFile(std::vector<Polygon_with_holes_2> polys, std::string path) {
+
+    //create handle
+    SHPHandle shapefile = SHPCreate(path.c_str(), SHPT_POLYGON);
+    DBFHandle dbfile = DBFCreate(path.c_str());
+
+    //create field for poly ID
+    int field_face_id = DBFAddField(dbfile, "ID", FTInteger, 5, 0);
+
+    int f = 0;
+
+    for (const auto& poly : polys) {
+        // Count total number of vertices and parts
+        int total_vertex_count = 0;
+        int part_count = 1 + poly.number_of_holes(); // 1 for outer boundary + holes
+
+        // Get the outer boundary and add its vertex count
+        const Polygon_2& outer_boundary = poly.outer_boundary();
+        total_vertex_count += outer_boundary.size();
+
+        // Get hole vertex counts
+        for (auto hole_it = poly.holes_begin(); hole_it != poly.holes_end(); ++hole_it) {
+            total_vertex_count += hole_it->size();
+        }
+
+
+        //collect vertices
+        double* x = new double[total_vertex_count];
+        double* y = new double[total_vertex_count];
+
+        // Array to store part start indices
+        int* part_start_indices = new int[part_count];
+        int vertex_index = 0;
+
+        // Write outer boundary vertices
+        part_start_indices[0] = 0; // Outer boundary starts at index 0
+        for (auto vit = outer_boundary.vertices_begin(); vit != outer_boundary.vertices_end(); ++vit) {
+            x[vertex_index] = to_double(vit->x());
+            y[vertex_index] = to_double(vit->y());
+            vertex_index++;
+        }
+
+    	// Write each hole
+    	int part_index = 1;
+    	for (auto hole_it = poly.holes_begin(); hole_it != poly.holes_end(); ++hole_it) {
+    		part_start_indices[part_index++] = vertex_index;
+
+    		// Ensure the hole is CW
+    		Polygon_2 hole = *hole_it;
+    		if (hole.is_counterclockwise_oriented()) {
+    			hole.reverse_orientation();
+    		}
+
+    		for (auto vit = hole.vertices_begin(); vit != hole.vertices_end(); ++vit) {
+    			x[vertex_index] = to_double(vit->x());
+    			y[vertex_index] = to_double(vit->y());
+    			vertex_index++;
+    		}
+    	}
+
+        //create polygon object
+        SHPObject* shape = SHPCreateObject(SHPT_POLYGON, -1, part_count, part_start_indices, nullptr, total_vertex_count, x, y, nullptr, nullptr);
+
+        //write shape into file
+        int shape_id = SHPWriteObject(shapefile, -1, shape);
+
+        //set field to face ID
+        DBFWriteIntegerAttribute(dbfile, shape_id, field_face_id, f++);
+
+        //memory management
+        SHPDestroyObject(shape);
+        delete[] x;
+        delete[] y;
+        delete[] part_start_indices;
+
+    }
+
+    DBFClose(dbfile);
+    SHPClose(shapefile);
+}
 
 }
 
