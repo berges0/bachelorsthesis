@@ -232,14 +232,14 @@ namespace IO_FUNCTIONS {
 
 
     const std::vector<Polygon_with_holes_2> &combine_polygons(const std::vector<bool>
-        &groups, Arrangement &arr) {
-        std::cout<<"GROUPSSIZE"<<groups.size()<<std::endl;
+        &in_solution, Arrangement &arr) {
+        std::cout<<"GROUPSSIZE"<<in_solution.size()<<std::endl;
         static std::vector<Polygon_2> outer_boundaries;
         static std::vector<Polygon_2> holes;
         for (Arrangement::Halfedge_iterator eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit) {
             auto eitc = eit;
-            if (!eitc->data().visited && groups[eitc->face()->data().id] && (!groups[eitc->twin()->face()->data().id]||eitc->twin()->face()->is_unbounded())) {
-                Polygon_2 poly = get_contiguous_boundary(eitc, groups);
+            if (!eitc->data().visited && in_solution[eitc->face()->data().id] && (!in_solution[eitc->twin()->face()->data().id]||eitc->twin()->face()->is_unbounded())) {
+                Polygon_2 poly = get_contiguous_boundary(eitc, in_solution);
                 assert(poly.is_simple());
                 if (poly.is_counterclockwise_oriented()) {
                     outer_boundaries.emplace_back(poly);
@@ -256,20 +256,20 @@ namespace IO_FUNCTIONS {
         return create_polygons_with_holes(outer_to_holes, outer_boundaries);
     }
 
-    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &groups) {
+    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &in_solution) {
 
-        assert(groups[edge->face()->data().id] && (!groups[edge->twin()->face()->data().id])||edge->twin()->face()->is_unbounded());
+        assert(in_solution[edge->face()->data().id] && (!in_solution[edge->twin()->face()->data().id])||edge->twin()->face()->is_unbounded());
         Polygon_2 polygon;
         do {
             edge->data().visited = true;
-            if (!groups[edge->twin()->face()->data().id] || edge->twin()->face()->is_unbounded()) {
+            if (!in_solution[edge->twin()->face()->data().id] || edge->twin()->face()->is_unbounded()) {
                 polygon.push_back(edge->source()->point());
                 if (edge->target()->point() == *(polygon.vertices_begin())) {
                     return polygon; // finished
                 }
                 edge = edge->next();
             }
-            else if (groups[edge->twin()->face()->data().id]) {
+            else {
                 edge = edge->twin()->next();
             }
         }while (true);

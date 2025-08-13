@@ -30,9 +30,9 @@ namespace IO_FUNCTIONS {
 //CONVERT SOLUTION POLYGONS TO CONTIGUOUS POLYGONS
 
     const std::vector<Polygon_with_holes_2> &combine_polygons(const std::vector<bool>
-        &groups, Arrangement &arr);
+        &in_solution, Arrangement &arr);
 
-    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &groups);
+    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &in_solution);
 
     const std::map<int, std::vector<Polygon_2>> &locate_holes(const std::vector<Polygon_2> &outer_boundaries,
         const std::vector<Polygon_2> &holes);
