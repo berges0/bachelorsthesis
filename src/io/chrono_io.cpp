@@ -12,9 +12,9 @@ std::chrono::steady_clock::time_point Timer::stop() noexcept {
     return stopped_;
 }
 
-std::chrono::duration<int64_t, std::micro> Timer::elapsed() const noexcept {
+std::chrono::duration<int64_t, std::milli> Timer::elapsed() const noexcept {
     auto diff = stopTimeOrNow() - started_;
-    return std::chrono::duration_cast<std::chrono::duration<int64_t, std::micro>>(diff);
+    return std::chrono::duration_cast<std::chrono::duration<int64_t, std::milli>>(diff);
 }
 
 std::chrono::steady_clock::time_point Timer::startTime() const noexcept {

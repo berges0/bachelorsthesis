@@ -79,7 +79,7 @@ public:
      * If stop() was called, the duration is between the start() and stop()
      * calls is returned.
      */
-    std::chrono::duration<int64_t, std::micro> elapsed() const noexcept;
+    std::chrono::duration<int64_t, std::milli> elapsed() const noexcept;
 
     /**
      * Returns the time at which the instance was started.

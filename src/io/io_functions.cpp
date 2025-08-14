@@ -231,8 +231,9 @@ namespace IO_FUNCTIONS {
     //CONVERT SOLUTION POLYGONS TO CONTIGUOUS POLYGONS
 
 
-    const std::vector<Polygon_with_holes_2> &combine_polygons(const std::vector<bool>
-        &in_solution, Arrangement &arr) {
+    const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  &combine_polygons(const std::vector<bool>
+    &in_solution, Arrangement &arr) {
+
         std::cout<<"GROUPSSIZE"<<in_solution.size()<<std::endl;
         static std::vector<Polygon_2> outer_boundaries;
         static std::vector<Polygon_2> holes;
@@ -249,12 +250,11 @@ namespace IO_FUNCTIONS {
             }
 
         }
-        std::cout<<"NR OF POLYGONS"<<outer_boundaries.size()<<std::endl;
-        std::cout<<"NR OF HOLES "<<holes.size()<<std::endl;
-        auto outer_to_holes = locate_holes(outer_boundaries, holes);
+        static auto holes_and_outer = std::make_pair(outer_boundaries, holes);
+        return holes_and_outer;
 
-        return create_polygons_with_holes(outer_to_holes, outer_boundaries);
     }
+
 
     const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &in_solution) {
 
@@ -309,8 +309,8 @@ namespace IO_FUNCTIONS {
         return outer_to_holes;
     }
 
-    const std::vector<Polygon_with_holes_2> &create_polygons_with_holes(const std::map<int, std::vector<Polygon_2>>
-        &outer_to_holes, const std::vector<Polygon_2> &outer_boundaries) {
+    const std::vector<Polygon_with_holes_2> &create_polygons_with_holes(const std::vector<Polygon_2> &outer_boundaries, const std::vector<Polygon_2> &holes) {
+        auto outer_to_holes = locate_holes(outer_boundaries, holes);
 
         static std::vector<Polygon_with_holes_2> polygons;
 

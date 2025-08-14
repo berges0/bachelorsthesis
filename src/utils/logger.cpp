@@ -1,4 +1,34 @@
 //
 // Created by samuel-berge on 8/11/25.
 //
+#include "utils/logger.hpp"
+
+Logger::Logger(const std::string out_file_name):out_file_name_(out_file_name){
+    timer_.start();
+    nlohmann::json j;
+    std::ofstream file(out_file_name_);
+    file << j.dump(4) << std::endl; // pretty print with indentation
+}
+
+
+void Logger::start_operation() {
+    start_operation_=timer_.elapsed();
+}
+
+void Logger::end_operation() {
+    end_operation_=timer_.elapsed();
+}
+
+std::chrono::duration<int64_t, std::milli> Logger::operation_duration() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(end_operation_ - start_operation_);
+}
+
+void Logger::end() {
+    timer_.stop();
+    add("Overall Time taken by algorithm: " , std::to_string(timer_.elapsed().count()));
+    std::ofstream outFile(out_file_name_);
+    outFile << obj_.dump(4) << std::endl;
+}
+
+
 
