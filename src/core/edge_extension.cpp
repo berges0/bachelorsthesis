@@ -140,6 +140,8 @@ namespace EDGE_EXTENSION {
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
+            int seg_id = segments.size();
+
             static std::vector<Segment_w_info> pruned_segments;
             for (size_t i = 0; i < segments.size(); ++i) {
                 if (to_prune[i]){
@@ -152,12 +154,12 @@ namespace EDGE_EXTENSION {
                     if (hit) {
                         if (get_distance(P2,*hit)<get_distance(P1,P2)){
                             //std::cout << "Pruning segment: " << P1 << " to " << P2 << " to " << *hit << std::endl;
-                            pruned_segments.emplace_back(Segment_w_info(Segment(P1, *hit), segments[i].from_poly, segments[i].seg_id, segments[i].poly_id, segments[i].shoot_source,segments[i].shoot_target));
+                            pruned_segments.emplace_back(Segment_w_info(Segment(P1, *hit), segments[i].from_poly, seg_id++, segments[i].poly_id, segments[i].shoot_source,segments[i].shoot_target));
                         }
                     }
                 }
                 else {
-                    pruned_segments.emplace_back(segments[i]);
+                    pruned_segments.emplace_back(Segment_w_info(segments[i].seg, segments[i].from_poly, seg_id++, segments[i].poly_id, segments[i].shoot_source,segments[i].shoot_target));
                 }
             }
             return pruned_segments;
