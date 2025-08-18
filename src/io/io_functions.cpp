@@ -14,14 +14,17 @@ namespace IO_FUNCTIONS {
         const std::vector<std::vector<int>>& polygons) {
 
         static std::vector<Segment_w_info> segments;
-        int id=0;
+
+        int seg_id=0;
+        int poly_id=0;
         for (const auto &poly:polygons) {
 
             int n = poly.size();
             if(n<2) continue;
 
             if(n==2){
-                segments.emplace_back(Segment_w_info(Segment( Point(points[poly[0]].x, points[poly[0]].y), Point(points[poly[1]].x, points[poly[1]].y)), true, id++, true, true));
+                segments.emplace_back(Segment_w_info(Segment( Point(points[poly[0]].x, points[poly[0]].y), Point(points[poly[1]].x, points[poly[1]].y)), true, seg_id++, poly_id++, true, true));
+                continue;
             }
 
             bool backward_shoot;
@@ -51,9 +54,10 @@ namespace IO_FUNCTIONS {
                     forward_shoot=true;
                 } else{std::cerr<<"ERROR";}
 
-                segments.emplace_back(Segment_w_info(Segment(pt1,pt2), true, id++, backward_shoot, forward_shoot));
+                segments.emplace_back(Segment_w_info(Segment(pt1,pt2), true, seg_id++, poly_id, backward_shoot, forward_shoot));
                 backward_shoot=forward_shoot;
             }
+            poly_id++;
         }
         return segments;
     }

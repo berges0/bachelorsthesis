@@ -72,14 +72,15 @@ struct SkipSegment {
 };
 
 struct Segment_w_info{
-  Segment seg;
-  bool from_poly;
-  int poly_id;
-  bool shoot_source;
-  bool shoot_target;
-  Segment_w_info(const Segment& s, bool fp, int id, bool shoot_source,
-  bool shoot_target) : seg(s), from_poly(fp), poly_id(id),  shoot_source(shoot_source),
-  shoot_target(shoot_target) {}
+    Segment seg;
+    bool from_poly;
+    int seg_id;
+    int poly_id;
+    bool shoot_source;
+    bool shoot_target;
+    Segment_w_info(const Segment& s, bool fp, int seg_id, int poly_id, bool shoot_source,
+      bool shoot_target) : seg(s), from_poly(fp), seg_id(seg_id), poly_id(poly_id),  shoot_source(shoot_source),
+      shoot_target(shoot_target) {}
 };
 
 typedef bool CurveData;              // data attached to original Curve_2

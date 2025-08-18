@@ -25,6 +25,7 @@ namespace EDGE_EXTENSION {
 
     namespace STANDARD {
         const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments) {
+            int id = segments.size();
 
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
@@ -45,7 +46,7 @@ namespace EDGE_EXTENSION {
                 if (segments[count].shoot_source) {
                     auto hit_forward = first_intersection(p1, forward, tree, &segment);
                     if (hit_forward) {
-                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_forward), false, -1, false,false));
+                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_forward), false, id++, -1, false,false));
                         //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
                     }
 
@@ -53,7 +54,7 @@ namespace EDGE_EXTENSION {
                 if (segments[count].shoot_target) {
                     auto hit_backward = first_intersection(p2, backward, tree, &segment);
                     if (hit_backward) {
-                        all_segments.emplace_back(Segment_w_info(Segment(p2, *hit_backward),false, -1,false, false));
+                        all_segments.emplace_back(Segment_w_info(Segment(p2, *hit_backward),false, id++,-1,false, false));
                         //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
                     }
                 }
@@ -66,6 +67,8 @@ namespace EDGE_EXTENSION {
 
     namespace LIMITED{
         const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments, double threshold) {
+            int id = segments.size();
+
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
@@ -93,13 +96,13 @@ namespace EDGE_EXTENSION {
                             double scale = max_distance / len;          // length exactly = max_distance
                             Point target = p1 + forward * Kernel::FT(scale);
                             all_segments.emplace_back(
-                                Segment_w_info(Segment(p1, target), false, -1, false, false)
+                                Segment_w_info(Segment(p1, target), false, id++,-1, false, false)
                             );
                             to_prune.push_back(true);
                         }
                     }
                     else if (hit_forward && get_distance(p1, *hit_forward) <= max_distance) {
-                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_forward), false, -1, false,false));
+                        all_segments.emplace_back(Segment_w_info(Segment(p1, *hit_forward), false, id++,-1, false,false));
                         to_prune.push_back(false);
                     }
                 }
@@ -114,7 +117,7 @@ namespace EDGE_EXTENSION {
                             double scale = max_distance / len;          // length exactly = max_distance
                             Point target = p2 + backward * Kernel::FT(scale);
                             all_segments.emplace_back(
-                                Segment_w_info(Segment(p2, target), false, -1, false, false)
+                                Segment_w_info(Segment(p2, target), false, id++,-1, false, false)
                             );
                             to_prune.push_back(true);
 
@@ -122,7 +125,7 @@ namespace EDGE_EXTENSION {
                         //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
                     }
                     else if (hit_backward && get_distance(p2, *hit_backward) <= max_distance) {
-                        all_segments.emplace_back(Segment_w_info(Segment(p2, *hit_backward), false, -1, false,false));
+                        all_segments.emplace_back(Segment_w_info(Segment(p2, *hit_backward), false, id++, -1, false,false));
                         to_prune.push_back(false);
 
                     }
@@ -149,7 +152,7 @@ namespace EDGE_EXTENSION {
                     if (hit) {
                         if (get_distance(P2,*hit)<get_distance(P1,P2)){
                             //std::cout << "Pruning segment: " << P1 << " to " << P2 << " to " << *hit << std::endl;
-                            pruned_segments.emplace_back(Segment_w_info(Segment(P1, *hit), false, -1, false,false));
+                            pruned_segments.emplace_back(Segment_w_info(Segment(P1, *hit), segments[i].from_poly, segments[i].seg_id, segments[i].poly_id, segments[i].shoot_source,segments[i].shoot_target));
                         }
                     }
                 }
@@ -221,10 +224,10 @@ namespace EDGE_EXTENSION {
         Point trc(maxX+set_off_x, maxY+set_off_y);
         Point brc(maxX+set_off_x, minY-set_off_y);
 
-        Segment_w_info edge1(Segment(blc, tlc), false, id++,false,false);
-        Segment_w_info edge2(Segment(tlc, trc), false, id++,false,false);
-        Segment_w_info edge3(Segment(trc, brc), false, id++,false,false);
-        Segment_w_info edge4(Segment(brc, blc), false, id++,false,false);
+        Segment_w_info edge1(Segment(blc, tlc), false, id++, -1, false,false);
+        Segment_w_info edge2(Segment(tlc, trc), false, id++, -1, false,false);
+        Segment_w_info edge3(Segment(trc, brc), false, id++, -1, false,false);
+        Segment_w_info edge4(Segment(brc, blc), false, id++, -1, false,false);
         segments.push_back(edge1);
         segments.push_back(edge2);
         segments.push_back(edge3);
