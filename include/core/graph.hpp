@@ -11,7 +11,7 @@
 
 namespace GRAPH {
 
-    Graph &build_graph(const Arrangement& arr, double alpha);
+    Graph build_graph(const Arrangement& arr, double alpha);
 
     void update_common_boundaries(int face_1, int face_2, double weight, std::vector<std::pair<int, double>> &common_boundaries);
 

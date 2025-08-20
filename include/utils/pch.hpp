@@ -24,6 +24,7 @@
 #include <numeric>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/Polygon_set_2.h>
 
 #include <CGAL/Arr_extended_dcel.h>
 #include <typeinfo>

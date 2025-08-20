@@ -9,7 +9,7 @@
 
 namespace EDGE_EXTENSION {
 
-    const std::vector<Segment_w_info> &edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold) {
+    const std::vector<Segment_w_info> edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold) {
         if (version == "0") {
             return STANDARD::extension(segments);
         }
@@ -19,19 +19,18 @@ namespace EDGE_EXTENSION {
         else {
             throw std::runtime_error("Unknown version: " + version);
         }
-        static std::vector<Segment_w_info> empty;
+        std::vector<Segment_w_info> empty;
         return empty; // This should never be reached, but added to avoid compiler warnings.
     }
 
     namespace STANDARD {
-        const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments) {
+        const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments) {
             int id = segments.size();
 
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
-
-            static std::vector<Segment_w_info> all_segments = segments;
+            std::vector<Segment_w_info> all_segments = segments;
 
             int count = 0;
             for (const Segment& segment : just_segments) {
@@ -66,14 +65,14 @@ namespace EDGE_EXTENSION {
     }
 
     namespace LIMITED{
-        const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments, double threshold) {
+        const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments, double threshold) {
             int id = segments.size();
 
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
 
-            static std::vector<Segment_w_info> all_segments = segments;
+            std::vector<Segment_w_info> all_segments = segments;
             std::vector<bool> to_prune(segments.size(), false);
             int count = 0;
             for (const Segment& segment : just_segments) {
@@ -136,13 +135,13 @@ namespace EDGE_EXTENSION {
             return post_process(all_segments, to_prune);
         }
 
-        const std::vector<Segment_w_info> &post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune) {
+        const std::vector<Segment_w_info> post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune) {
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
             int seg_id = segments.size();
 
-            static std::vector<Segment_w_info> pruned_segments;
+            std::vector<Segment_w_info> pruned_segments;
             for (size_t i = 0; i < segments.size(); ++i) {
                 if (to_prune[i]){
                     Point P1 = segments[i].seg.source();

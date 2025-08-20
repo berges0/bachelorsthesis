@@ -9,12 +9,12 @@
 
 namespace MAX_FLOW {
 
-    const std::vector<bool> &max_flow(Graph &graph_data, const Arrangement &arr);
+    const std::vector<bool> max_flow(Graph &graph_data, const Arrangement &arr);
 
     void add_bidirectional_edge(GraphType& graph, unsigned int source, unsigned int target, float weight,
           std::vector<EdgeDescriptor>& reverseEdges, std::vector<float>& capacity);
 
-    const std::vector<bool> &solution_vector(const std::vector<int> &groups);
+    const std::vector<bool> solution_vector(const std::vector<int> &groups);
 
 }
 

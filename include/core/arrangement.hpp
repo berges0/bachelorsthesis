@@ -9,7 +9,7 @@
 
 namespace ARRANGEMENT {
 
-    Arrangement &build_arrangement(std::vector<Segment_w_info>& segments);
+    Arrangement build_arrangement(std::vector<Segment_w_info>& segments);
 
     void add_edge_data(Arrangement &arr);
 

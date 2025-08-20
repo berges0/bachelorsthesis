@@ -14,16 +14,16 @@ namespace EDGE_EXTENSION {
 
 void add_outer_box(std::vector<Segment_w_info>& segments);
 
-const std::vector<Segment_w_info> &edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold);
+const std::vector<Segment_w_info> edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold);
 
 namespace STANDARD {
-const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments);
+const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments);
 }
 
 namespace LIMITED{
-const std::vector<Segment_w_info> &extension(std::vector<Segment_w_info>& segments, double threshold);
+const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments, double threshold);
 
-const std::vector<Segment_w_info> &post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune);
+const std::vector<Segment_w_info> post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune);
 }
 
     std::optional<Point> first_intersection(const Point& origin,

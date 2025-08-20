@@ -25,6 +25,7 @@ add_executable(aggregator
         src/io/io_functions.cpp
         src/utils/logger.cpp
         src/core/pre_process.cpp
+        src/core/algorithm.cpp
 )
 
 # Precompile headers

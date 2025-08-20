@@ -6,13 +6,13 @@
 
 namespace MAX_FLOW {
 
-    const std::vector<bool> &max_flow(Graph &graph_data, const Arrangement &arr) {
+    const std::vector<bool> max_flow(Graph &graph_data, const Arrangement &arr) {
         GraphType graph;
         int sourceId = std::get<2>(graph_data);
         int sinkId = std::get<3>(graph_data);
         unsigned int numberOfVertices = std::get<4>(graph_data)+2; // +2 for source and sink vertices
 
-        static std::vector<int> groups(numberOfVertices);
+        std::vector<int> groups(numberOfVertices);
 
         std::vector<EdgeDescriptor> reverseEdges;
 
@@ -65,8 +65,8 @@ namespace MAX_FLOW {
             capacity.push_back(weight);
     }
 
-    const std::vector<bool> &solution_vector(const std::vector<int> &groups){
-        static std::vector<bool> solution(groups.size(), false);
+    const std::vector<bool> solution_vector(const std::vector<int> &groups){
+        std::vector<bool> solution(groups.size(), false);
         for(size_t index=0; index < groups.size() - 2; ++index) {
             if(groups[index] != 0) {
                 solution[index] = true;
