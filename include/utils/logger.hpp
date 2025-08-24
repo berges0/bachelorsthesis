@@ -22,7 +22,8 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
             obj_[event] = std::forward<decltype(value)>(value);
         }
         void start_operation();
-        void end_operation();
+
+        void end_operation(const std::string &event);
 
         std::chrono::duration<int64_t, std::milli> operation_duration();
 

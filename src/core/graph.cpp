@@ -40,41 +40,38 @@ namespace GRAPH {
                         common_boundaries[twin_id]+=calculate_length(curr);
                     }
                 }
+                //we don't want orientation of box to influence the solution because it doesn't preserve edge orientation
+                //ignore special case with polygon parallel to box because we use offset of box anyway
                 else if (!fit->data().belongs_to_poly) {
-                    outer_weight += calculate_length(curr);
+                    outer_weight = DBL_MAX;
                 }
+                // in case, face is from poly and lies at outer boundary (very unlikely; has to be parallel to box) and
+                // only with outer box with offset 0 possible. then there will be an edge added with w({face, sink})=0
+                // and w({face, source})=DBL_MAX so that it is always chosen into the solution
                 ++curr;
             } while (curr != fit->outer_ccb());
 
             for (auto [incident_face, weight] : common_boundaries) {
-                edges.push_back(std::make_pair(face_id, incident_face));
+                edges.emplace_back(face_id, incident_face);
                 weights.push_back((1-alpha)*weight);
             }
             if (fit->data().belongs_to_poly) {
-                add_polyface(edges, weights, source_id, target_id, face_id);
+                edges.emplace_back(face_id, source_id);
+                weights.push_back(DBL_MAX);
+                edges.emplace_back(face_id, target_id);
+                weights.push_back(0.0);
             }
             else {
-                add_non_polyface(edges, weights, source_id, target_id, face_id,
-                    alpha, outer_weight, (fit->data().area));
+                //either outer weight is 0 or infinity, so that outer boundary touching faces are not counted in and
+                //the other edges just count in with their area
+                edges.emplace_back(face_id, source_id);
+                weights.push_back(0);
+                edges.emplace_back(face_id, target_id);
+                weights.push_back(alpha*(fit->data().area) + (1-alpha)*outer_weight);
             }
         }
         Graph graph (edges, weights, source_id, target_id, num_faces);
         return graph;
     }
 
-
-    void add_polyface(std::vector<std::pair<int, int>> &edges, std::vector<double> &weights, int s, int t, int face_id) {
-        edges.push_back(std::make_pair(face_id, s));
-        weights.push_back(DBL_MAX);
-        edges.push_back(std::make_pair(face_id, t));
-        weights.push_back(0.0);
-    }
-
-    void add_non_polyface(std::vector<std::pair<int, int>> &edges, std::vector<double> &weights, int s, int t, int face_id,
-        double alpha, double outer_weight, double area) {
-        edges.push_back(std::make_pair(face_id, s));
-        weights.push_back(0);
-        edges.push_back(std::make_pair(face_id, t));
-        weights.push_back(alpha*area + (1-alpha)*outer_weight);
-    }
 }

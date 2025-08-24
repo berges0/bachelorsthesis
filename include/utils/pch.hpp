@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <filesystem>
+#include <string>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_segment_primitive_2.h>
@@ -133,6 +134,42 @@ struct FaceData {
         : id(_id), belongs_to_poly(_belongs_to_poly), area(_area) {}
 };
 
+struct Grid {
+    double minX, minY, maxX, maxY;
+    double stepX=0., stepY=0., lenX, lenY;
+    int nr_cells_x=0., nr_cells_y=0., nr_cells=0.;
+    double offset_x, offset_y;
+    Grid () = default;
+    explicit Grid (const std::vector<Segment_w_info> &segments) {
+        double min_X = std::numeric_limits<double>::max();
+        double max_X = std::numeric_limits<double>::lowest();
+        double min_Y = std::numeric_limits<double>::max();
+        double max_Y = std::numeric_limits<double>::lowest();
+
+        for (const auto& s : segments) {
+            const auto& a = s.seg.source();
+            const auto& b = s.seg.target();
+            const double ax = CGAL::to_double(a.x()), ay = CGAL::to_double(a.y());
+            const double bx = CGAL::to_double(b.x()), by = CGAL::to_double(b.y());
+            min_X = std::min(min_X, std::min(ax, bx));
+            max_X = std::max(max_X, std::max(ax, bx));
+            min_Y = std::min(min_Y, std::min(ay, by));
+            max_Y = std::max(max_Y, std::max(ay, by));
+        }
+
+        const double len_X = std::max(0.0, max_X - min_X);
+        const double len_Y = std::max(0.0, max_Y - min_Y);
+        minX = min_X;
+        minY = min_Y;
+        maxX = max_X;
+        maxY = max_Y;
+        lenX = len_X;
+        lenY = len_Y;
+        offset_x = -min_X;
+        offset_y = -min_Y;
+    }
+};
+
 typedef CGAL::Arr_extended_dcel<Traits,
                                 VertexData, // data field for vertices
                                 HalfedgeData,// data field for halfedge
@@ -158,5 +195,7 @@ typedef boost::graph_traits<GraphType>::edges_size_type EdgeIndex;
 //edges, weights, source_id, target_id, num_faces
 typedef std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> Graph;
 
+// (minX, minY), (maxX, maxY), stepX, stepY, nr_cells
+typedef std::tuple<Point, Point, double, double, int> grid;
 
 #endif //PCH_HPP

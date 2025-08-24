@@ -12,11 +12,10 @@ namespace IO_FUNCTIONS {
 
 std::vector<Segment_w_info> read_in_segment(const std::vector<SHPLoader::Point2D>& points,
     const std::vector<std::vector<int>>& polygons) {
-
     std::vector<Segment_w_info> segments;
-
     int seg_id=0;
     int poly_id=0;
+
     for (const auto &poly:polygons) {
 
         int n = poly.size();

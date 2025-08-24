@@ -12,9 +12,7 @@ namespace EDGE_EXTENSION {
 
     std::vector<Segment> filter_segments(const std::vector<Segment_w_info>& segments);
 
-void add_outer_box(std::vector<Segment_w_info>& segments);
-
-const std::vector<Segment_w_info> edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold);
+void add_outer_box(std::vector<Segment_w_info>& segments, double offset);
 
 namespace STANDARD {
 const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments);

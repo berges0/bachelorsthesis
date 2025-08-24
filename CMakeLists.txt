@@ -25,6 +25,10 @@ add_executable(aggregator
         src/io/io_functions.cpp
         src/utils/logger.cpp
         src/core/algorithm.cpp
+        include/core/subdivision.hpp
+        src/core/subdivision.cpp
+        include/core/preprocess.hpp
+        src/core/preprocess.cpp
 )
 
 # Precompile headers

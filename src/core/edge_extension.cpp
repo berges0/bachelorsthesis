@@ -9,20 +9,6 @@
 
 namespace EDGE_EXTENSION {
 
-    const std::vector<Segment_w_info> edge_extension(std::vector<Segment_w_info>& segments, std::string version, double threshold) {
-        if (version == "0") {
-            return STANDARD::extension(segments);
-        }
-        if (version == "1") {
-            return LIMITED::extension(segments, threshold);
-        }
-        else {
-            throw std::runtime_error("Unknown version: " + version);
-        }
-        std::vector<Segment_w_info> empty;
-        return empty; // This should never be reached, but added to avoid compiler warnings.
-    }
-
     namespace STANDARD {
         const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments) {
             int id = segments.size();
@@ -203,8 +189,8 @@ namespace EDGE_EXTENSION {
     }
 
 
-    void add_outer_box(std::vector<Segment_w_info>& segments) {
-
+    void add_outer_box(std::vector<Segment_w_info>& segments, double offset) {
+        if (segments.empty()) return;
         double minX = std::numeric_limits<double>::max();
         double maxX = std::numeric_limits<double>::lowest();
         double minY = std::numeric_limits<double>::max();
@@ -218,8 +204,9 @@ namespace EDGE_EXTENSION {
         }
         // Create the outer box segments
         int id = segments.size();
-        double set_off_x = 1;
-        double set_off_y = 1;
+        double set_off_x = offset * (maxX - minX);
+        double set_off_y = offset * (maxY - minY);
+
         Point blc(minX-set_off_x, minY-set_off_y);
         Point tlc(minX-set_off_x, maxY+set_off_y);
         Point trc(maxX+set_off_x, maxY+set_off_y);

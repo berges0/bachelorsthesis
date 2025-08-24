@@ -15,11 +15,13 @@ void Logger::start_operation() {
     start_operation_=timer_.elapsed();
 }
 
-void Logger::end_operation() {
-    end_operation_=timer_.elapsed();
+
+void Logger::end_operation(const std::string &event) {
+    add(event, std::to_string(operation_duration().count()));
 }
 
 std::chrono::duration<int64_t, std::milli> Logger::operation_duration() {
+    end_operation_ = timer_.elapsed();
     return std::chrono::duration_cast<std::chrono::milliseconds>(end_operation_ - start_operation_);
 }
 
@@ -28,6 +30,7 @@ void Logger::end() {
     add("Overall Time taken by algorithm: " , std::to_string(timer_.elapsed().count()));
     std::ofstream outFile(out_file_name_);
     outFile << obj_.dump(4) << std::endl;
+    std::cout<< "Overall Time taken by algorithm: " << timer_.elapsed() << std::endl;
 }
 
 
