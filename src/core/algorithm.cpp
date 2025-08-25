@@ -212,7 +212,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
 
     logger.end();
 }
-/*
+
 void run_with_preprocessing(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
     Logger &logger) {
     //TO BE IMPLEMENTED
@@ -226,15 +226,62 @@ void run_with_preprocessing(const std::string &input_filename, const std::string
     EDGE_EXTENSION::add_outer_box(input_segments, 0.01);
 
     logger.start_operation();
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     logger.end_operation("Extending edges (milliseconds) ");
 
-    auto segs = PRE_PROCESS::group_edges(extended_segments);
+    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
 
 
+    auto grid = SUBDIVISION::root_grid(input_segments, 0.67);
 
+    auto segs = PRE_PROCESS::group_degree(extended_segments, 10);
+
+    double shortest=DBL_MAX;
+    for (auto iseg : input_segments) {
+        shortest = std::min(shortest,EDGE_EXTENSION::get_distance(iseg.seg.source(), iseg.seg.target()));
+    }
+    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs, grid.lenX/100);
+    PRE_PROCESS::longest_wins(spatially_close);
+
+    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(spatially_close[0]), "preprocessed_result.svg");
+
+    std::cout << "BEFORE " << extended_segments.size() << " segments" << std::endl;
+    std::cout << "AFTER " <<spatially_close[0].size() << " segments" << std::endl;
+
+    logger.start_operation();
+    Arrangement arr = ARRANGEMENT::build_arrangement(spatially_close[0]);
+    logger.end_operation("Building Arragnement (milliseconds)");
+    logger.add("Number of segments after extension", arr.number_of_edges());
+    logger.add("Number of faces in arrangement", arr.number_of_faces());
+
+    logger.start_operation();
+    Graph graph = GRAPH::build_graph(arr, alpha);
+    logger.end_operation("Building Graph (milliseconds)");
+    logger.add("Number of edges in graph", std::get<0>(graph).size());
+
+    logger.start_operation();
+    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
+    logger.end_operation("Running Max Flow (milliseconds)");
+    int nr_faces_solution = 0;
+    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
+    logger.add("Number of faces solution", nr_faces_solution);
+
+    logger.start_operation();
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    auto output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
+    logger.end_operation("Combining faces of solution (milliseconds)");
+    logger.add("Number of polygons in solution", holes_and_outer.first.size());
+    logger.add("Number of holes in solution", holes_and_outer.second.size());
+
+    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+
+    std::string command1 = "qgis " + input_filename + " &";
+    std::string command2 = "qgis " + output_filename + " &";
+    int i = std::system(command1.c_str());
+    int j = std::system(command2.c_str());
+    logger.end();
 }
-*/
+
 
 
 

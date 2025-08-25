@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     double alpha = clParser.getAlpha();
     double threshold = 4; // Default threshold for limited version
 
-    Logger logger("output_1.json");
+    Logger logger("output.json");
 
     logger.add("Input file name", clParser.inputFileName());
     logger.add("Output file name", clParser.outputFileName());
@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
         ALGORITHM::run_limited(clParser.inputFileName(), clParser.outputFileName(), alpha, threshold, logger);
     } else if (version == "2") {
         ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputFileName(), alpha, threshold, logger);
+    } else if (version == "3") {
+        ALGORITHM::run_with_preprocessing(clParser.inputFileName(), clParser.outputFileName(), alpha, threshold, logger);
     } else {
         std::cerr << "Unknown version: " << version << ". Supported versions are: standard, limited, subdivision.\n";
         return EXIT_FAILURE;

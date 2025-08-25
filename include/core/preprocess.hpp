@@ -10,9 +10,21 @@
 
 namespace PRE_PROCESS {
 
-    std::vector<std::vector<Segment_w_info>> group_edges(const std::vector<Segment_w_info>& segments);
+
+std::vector<std::vector<Segment_w_info>> group_degree(const std::vector<Segment_w_info> &segments, double deg_threshold);
 
 
+
+void longest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups);
+
+std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std::vector<Segment_w_info>> &groups,
+    double threshold_distance);
+
+std::vector<Segment_w_info> merge_spatially_close(std::vector<Segment_w_info> &input_segments,
+    std::vector<std::vector<Segment_w_info>> &groups, double threshold_distance);
+
+std::vector<Segment_w_info> merge_edges(std::vector<std::vector<Segment_w_info>> spatial_groups,
+    std::vector<Segment_w_info> &input_segments, std::vector<Segment_w_info> &unmodified);
 }
 
 

@@ -39,6 +39,8 @@
 #include <boost/property_map/property_map.hpp>
 #include <stdexcept>
 #include <string>
+#include <CGAL/linear_least_squares_fitting_2.h>
+
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
 typedef Kernel::Point_2 Point;
@@ -80,6 +82,7 @@ struct Segment_w_info{
     int poly_id;
     bool shoot_source;
     bool shoot_target;
+    Segment_w_info()=default;
     Segment_w_info(const Segment& s, bool fp, int seg_id, int poly_id, bool shoot_source,
       bool shoot_target) : seg(s), from_poly(fp), seg_id(seg_id), poly_id(poly_id),  shoot_source(shoot_source),
       shoot_target(shoot_target) {}
