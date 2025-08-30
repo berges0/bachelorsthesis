@@ -16,16 +16,24 @@
 
 namespace ALGORITHM{
 
+    void read_in (std::vector<Segment_w_info> &input_segments, const std::string &input_filename, Logger &logger);
+
+    void aggregate(std::vector<Polygon_with_holes_2> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger);
+
     void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger);
 
     void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
         Logger &logger);
 
-    void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double subset_size,
-        Logger &logger);
+    void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double to_the_power_of,
+        std::string subversion, Logger &logger);
 
-    void run_with_preprocessing(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
-        Logger &logger);
+    void run_preprocessed(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
+        double distance, std::string subversion, Logger &logger);
+
+    void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
+        double distance, std::string subversion, Logger &logger);
+
 
 }
 

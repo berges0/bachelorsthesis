@@ -3,28 +3,23 @@
 //
 #include "core/algorithm.hpp"
 
+#include "core/edge_relink.hpp"
 
 namespace ALGORITHM{
 
-void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger) {
-
+void read_in (std::vector<Segment_w_info> &input_segments, const std::string &input_filename, Logger &logger) {
     auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
     logger.add("Number of input polygons", data.second.size());
 
-    std::vector<Segment_w_info> input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
+    input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
     logger.add("Number of input segments", input_segments.size());
 
-    EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+}
+
+void aggregate(std::vector<Polygon_with_holes_2> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger) {
 
     logger.start_operation();
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
-    logger.end_operation("Extending edges (milliseconds) ");
-
-    //JUST FOR DEBUGGING
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
-
-    logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments);
+    Arrangement arr = ARRANGEMENT::build_arrangement(input);
     logger.end_operation("Building Arragnement (milliseconds)");
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
@@ -43,10 +38,30 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 
     logger.start_operation();
     auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
-    auto output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
+    output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Combining faces of solution (milliseconds)");
     logger.add("Number of polygons in solution", holes_and_outer.first.size());
     logger.add("Number of holes in solution", holes_and_outer.second.size());
+}
+
+void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger) {
+
+    std::vector<Segment_w_info> input_segments;
+
+    read_in(input_segments, input_filename, logger);
+
+    EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+
+    logger.start_operation();
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    logger.end_operation("Extending edges (milliseconds) ");
+
+    //JUST FOR DEBUGGING
+    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
+
+    std::vector<Polygon_with_holes_2> output_data;
+
+    aggregate(output_data, extended_segments, alpha, logger);
 
     IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
@@ -60,45 +75,19 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
     Logger &logger) {
 
-    auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
-    logger.add("Number of input polygons", data.second.size());
+    std::vector<Segment_w_info> input_segments;
 
-    std::vector<Segment_w_info> input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
-    logger.add("Number of input segments", input_segments.size());
+    read_in(input_segments, input_filename, logger);
 
-    EDGE_EXTENSION::add_outer_box(input_segments, 0.01);
+    EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
     logger.end_operation("Extending edges (milliseconds) ");
 
-    //JUST FOR DEBUGGING
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
+    std::vector<Polygon_with_holes_2> output_data;
 
-    logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments);
-    logger.end_operation("Building Arragnement (milliseconds)");
-    logger.add("Number of segments after extension", arr.number_of_edges());
-    logger.add("Number of faces in arrangement", arr.number_of_faces());
-
-    logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha);
-    logger.end_operation("Building Graph (milliseconds)");
-    logger.add("Number of edges in graph", std::get<0>(graph).size());
-
-    logger.start_operation();
-    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
-    logger.end_operation("Running Max Flow (milliseconds)");
-    int nr_faces_solution = 0;
-    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
-    logger.add("Number of faces solution", nr_faces_solution);
-
-    logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
-    auto output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
-    logger.end_operation("Combining faces of solution (milliseconds)");
-    logger.add("Number of polygons in solution", holes_and_outer.first.size());
-    logger.add("Number of holes in solution", holes_and_outer.second.size());
+    aggregate(output_data, extended_segments, alpha, logger);
 
     IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
@@ -109,8 +98,95 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     logger.end();
 }
 
-void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double subset_size,
-    Logger &logger) {
+void run_preprocessed(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
+    double distance, std::string subversion, Logger &logger) {
+
+    auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
+    logger.add("Number of input polygons", data.second.size());
+
+    std::vector<Segment_w_info> input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
+    logger.add("Number of input segments", input_segments.size());
+
+    EDGE_EXTENSION::add_outer_box(input_segments, 0.01);
+
+    logger.start_operation();
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    logger.end_operation("Extending edges (milliseconds) ");
+
+    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
+
+    auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
+
+    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
+        distance);
+
+    if (subversion=="0") {
+        PRE_PROCESS::longest_wins(spatially_close);
+    }
+    else if (subversion=="1") {
+        PRE_PROCESS::shortest_wins(spatially_close);
+    }
+    else if (subversion=="2") {
+        PRE_PROCESS::longest_and_shortest_wins(spatially_close);
+    }
+    else if (subversion=="3") {
+        PRE_PROCESS::longest_mid_shortest_wins(spatially_close);
+    }
+
+    assert(spatially_close.size()>0);
+    std::vector<Segment_w_info> filtered_extended = spatially_close[0];
+
+    std::vector<Polygon_with_holes_2> output_data(0);
+
+    aggregate(output_data, filtered_extended, alpha, logger);
+
+    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+
+    std::string command1 = "qgis " + input_filename + " &";
+    std::string command2 = "qgis " + output_filename + " &";
+    int i = std::system(command1.c_str());
+    int j = std::system(command2.c_str());
+    logger.end();
+}
+
+void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
+                     double distance, std::string subversion, Logger &logger) {
+
+    std::vector<Segment_w_info> input_segments;
+
+    read_in(input_segments, input_filename, logger);
+
+    EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+
+    logger.start_operation();
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    logger.end_operation("Extending edges (milliseconds) ");
+
+    auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
+
+    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
+        distance);
+
+    EDGE_RELINK::relink_edges(spatially_close);
+
+    auto relinked_segments = spatially_close[0];
+
+    std::vector<Polygon_with_holes_2> output_data(0);
+
+    aggregate(output_data, relinked_segments, alpha, logger);
+
+    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+
+    std::string command1 = "qgis " + input_filename + " &";
+    std::string command2 = "qgis " + output_filename + " &";
+    int i = std::system(command1.c_str());
+    int j = std::system(command2.c_str());
+    logger.end();
+}
+
+
+void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double to_the_power_of,
+    std::string subversion, Logger &logger) {
     auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
     logger.add("Number of input polygons", data.second.size());
 
@@ -212,77 +288,5 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
 
     logger.end();
 }
-
-void run_with_preprocessing(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
-    Logger &logger) {
-    //TO BE IMPLEMENTED
-
-    auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
-    logger.add("Number of input polygons", data.second.size());
-
-    std::vector<Segment_w_info> input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
-    logger.add("Number of input segments", input_segments.size());
-
-    EDGE_EXTENSION::add_outer_box(input_segments, 0.01);
-
-    logger.start_operation();
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
-    logger.end_operation("Extending edges (milliseconds) ");
-
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
-
-
-    auto grid = SUBDIVISION::root_grid(input_segments, 0.67);
-
-    auto segs = PRE_PROCESS::group_degree(extended_segments, 10);
-
-    double shortest=DBL_MAX;
-    for (auto iseg : input_segments) {
-        shortest = std::min(shortest,EDGE_EXTENSION::get_distance(iseg.seg.source(), iseg.seg.target()));
-    }
-    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs, grid.lenX/100);
-    PRE_PROCESS::longest_wins(spatially_close);
-
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(spatially_close[0]), "preprocessed_result.svg");
-
-    std::cout << "BEFORE " << extended_segments.size() << " segments" << std::endl;
-    std::cout << "AFTER " <<spatially_close[0].size() << " segments" << std::endl;
-
-    logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement(spatially_close[0]);
-    logger.end_operation("Building Arragnement (milliseconds)");
-    logger.add("Number of segments after extension", arr.number_of_edges());
-    logger.add("Number of faces in arrangement", arr.number_of_faces());
-
-    logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha);
-    logger.end_operation("Building Graph (milliseconds)");
-    logger.add("Number of edges in graph", std::get<0>(graph).size());
-
-    logger.start_operation();
-    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
-    logger.end_operation("Running Max Flow (milliseconds)");
-    int nr_faces_solution = 0;
-    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
-    logger.add("Number of faces solution", nr_faces_solution);
-
-    logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
-    auto output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
-    logger.end_operation("Combining faces of solution (milliseconds)");
-    logger.add("Number of polygons in solution", holes_and_outer.first.size());
-    logger.add("Number of holes in solution", holes_and_outer.second.size());
-
-    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
-
-    std::string command1 = "qgis " + input_filename + " &";
-    std::string command2 = "qgis " + output_filename + " &";
-    int i = std::system(command1.c_str());
-    int j = std::system(command2.c_str());
-    logger.end();
-}
-
-
-
 
 }

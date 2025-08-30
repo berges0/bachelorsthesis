@@ -5,7 +5,7 @@
 
 namespace ARRANGEMENT {
 
-    Arrangement build_arrangement(std::vector<Segment_w_info>& segments) {
+    Arrangement build_arrangement(const std::vector<Segment_w_info>& segments) {
         Arrangement arr;
         std::vector<Curve> curves;
         int next_id = 0;

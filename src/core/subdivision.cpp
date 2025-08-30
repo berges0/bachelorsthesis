@@ -70,33 +70,6 @@ Grid root_grid(const std::vector<Segment_w_info> &segments, double to_the_power_
     return grid;
 }
 
-Grid log_grid(const std::vector<Segment_w_info> &segments, double log_base) {
-    Grid grid(segments);
-
-    grid.stepX = (grid.lenX > 0.0) ? std::log(grid.lenX)/std::log(log_base) : 0.0;
-    grid.stepY = (grid.lenY > 0.0) ? std::log(grid.lenY)/std::log(log_base): 0.0;
-
-    grid.nr_cells_x = std::ceil(grid.lenX / grid.stepX);
-    grid.nr_cells_y = std::ceil(grid.lenY/ grid.stepY);
-    grid.nr_cells = grid.nr_cells_x * grid.nr_cells_y;
-
-    return grid;
-}
-
-Grid root_log_grid(const std::vector<Segment_w_info> &segments, double to_the_power_of, double log_base) {
-    Grid grid(segments);
-
-    grid.stepX = (grid.lenX > 0.0) ? pow(grid.lenX, to_the_power_of) * (std::log(grid.lenX)/std::log(log_base)) : 0.0;
-    grid.stepY = (grid.lenY > 0.0) ? pow(grid.lenY, to_the_power_of) * (std::log(grid.lenY)/std::log(log_base)): 0.0;
-
-    grid.nr_cells_x = std::ceil(grid.lenX / grid.stepX);
-    grid.nr_cells_y = std::ceil(grid.lenY/ grid.stepY);
-    grid.nr_cells = grid.nr_cells_x * grid.nr_cells_y;
-
-    return grid;
-}
-
-
 std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, int nr_polys, Grid grid) {
     int curr_id = 0;
     std::vector<std::vector<Segment_w_info>> result(grid.nr_cells);

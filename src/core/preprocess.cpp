@@ -37,15 +37,6 @@ std::vector<std::vector<Segment_w_info>> group_degree(const std::vector<Segment_
         result[group].push_back(seg);
     }
 
-    // sort by segment_length descending
-    for (auto &vec : result) {
-        std::sort(vec.begin(), vec.end(),
-            [](const Segment_w_info &a, const Segment_w_info &b) {
-                return a.seg.squared_length() > b.seg.squared_length();
-            }
-        );
-    }
-
     return result;
 }
 
@@ -108,9 +99,78 @@ std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std:
     return spatially_close_groups;
 }
 
+void shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups) {
+    // sort by segment_length descending
+    auto *skip = &spatially_close_groups[0];
+    for (auto &vec : spatially_close_groups) {
+        if (&vec==skip)continue;
+        std::sort(vec.begin(), vec.end(),
+            [](const Segment_w_info &a, const Segment_w_info &b) {
+                return a.seg.squared_length() < b.seg.squared_length();
+            }
+        );
+    }
+    for (int g = 1; g<spatially_close_groups.size(); ++g) {
+        assert (spatially_close_groups[g].size()>0);
+        spatially_close_groups[0].push_back(spatially_close_groups[g][0]);
+    }
+}
+
 void longest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups) {
+    // sort by segment_length descending
+    auto *skip = &spatially_close_groups[0];
+    for (auto &vec : spatially_close_groups) {
+        if (&vec==skip)continue;
+        std::sort(vec.begin(), vec.end(),
+            [](const Segment_w_info &a, const Segment_w_info &b) {
+                return a.seg.squared_length() > b.seg.squared_length();
+            }
+        );
+    }
+    for (int g = 1; g<spatially_close_groups.size(); ++g) {
+        assert (spatially_close_groups[g].size()>0);
+        spatially_close_groups[0].push_back(spatially_close_groups[g][0]);
+    }
+}
+
+void longest_and_shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups) {
+    // sort by segment_length descending
+    auto *skip = &spatially_close_groups[0];
+    for (auto &vec : spatially_close_groups) {
+        if (&vec==skip)continue;
+        std::sort(vec.begin(), vec.end(),
+            [](const Segment_w_info &a, const Segment_w_info &b) {
+                return a.seg.squared_length() > b.seg.squared_length();
+            }
+        );
+    }
     for (int g = 1; g<spatially_close_groups.size(); ++g) {
         spatially_close_groups[0].push_back(spatially_close_groups[g][0]);
+        if (spatially_close_groups[g].size()>1) {
+            spatially_close_groups[0].push_back(spatially_close_groups[g].back());
+        }
+    }
+}
+
+void longest_mid_shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups) {
+    // sort by segment_length descending
+    auto *skip = &spatially_close_groups[0];
+    for (auto &vec : spatially_close_groups) {
+        if (&vec==skip)continue;
+        std::sort(vec.begin(), vec.end(),
+            [](const Segment_w_info &a, const Segment_w_info &b) {
+                return a.seg.squared_length() > b.seg.squared_length();
+            }
+        );
+    }
+    for (int g = 1; g<spatially_close_groups.size(); ++g) {
+        spatially_close_groups[0].push_back(spatially_close_groups[g][0]);
+        if (spatially_close_groups[g].size()>2) {
+            spatially_close_groups[0].push_back(spatially_close_groups[g][spatially_close_groups[g].size()/2]);
+        }
+        if (spatially_close_groups[g].size()>1) {
+            spatially_close_groups[0].push_back(spatially_close_groups[g].back());
+        }
     }
 }
 /*

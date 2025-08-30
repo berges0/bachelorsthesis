@@ -13,9 +13,13 @@ namespace PRE_PROCESS {
 
 std::vector<std::vector<Segment_w_info>> group_degree(const std::vector<Segment_w_info> &segments, double deg_threshold);
 
-
+void shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups);
 
 void longest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups);
+
+void longest_mid_shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups);
+
+void longest_and_shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups);
 
 std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std::vector<Segment_w_info>> &groups,
     double threshold_distance);

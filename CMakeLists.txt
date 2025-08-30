@@ -29,6 +29,8 @@ add_executable(aggregator
         src/core/subdivision.cpp
         include/core/preprocess.hpp
         src/core/preprocess.cpp
+        include/core/edge_relink.hpp
+        src/core/edge_relink.cpp
 )
 
 # Precompile headers

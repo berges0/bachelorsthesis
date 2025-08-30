@@ -27,32 +27,52 @@ int main(int argc, char **argv) {
     std::cout << "Timelimit is: " << clParser.getTimeLimit() << '\n';
     std::cout << "Algorithm version is: " << clParser.getVersion() << '\n';
 
-    std::string version = clParser.getVersion();
-    double alpha = clParser.getAlpha();
-    double threshold = 4; // Default threshold for limited version
+    std::string version_input = clParser.getVersion();
 
-    Logger logger("output.json");
+    Logger logger(clParser.jsonFileName());
 
     logger.add("Input file name", clParser.inputFileName());
     logger.add("Output file name", clParser.outputFileName());
-    logger.add("Alpha", alpha);
-    logger.add("Version", version);
-    logger.add("Threshold", threshold);
+    logger.add("Json Filename", clParser.jsonFileName());
+    logger.add("Alpha", clParser.getAlpha());
+    logger.add("Version", version_input);
+    logger.add("Threshold", clParser.getThreshold());
+    logger.add("Threshold_deg", clParser.getDegree());
+    logger.add("Threshold_dist", clParser.getDistance());
+    logger.add("To the power of", clParser.getPower());
     logger.add("Timelimit", clParser.getTimeLimit().count());
 
+    std::string version = "0";
+    std::string subversion = "0";
+
+    if (version_input.size()>1) {
+        assert(version_input.size()==3);
+        version = version_input.substr(0);
+        subversion = version_input.substr(3, version_input.size()-1);
+    }
+    else if (version_input.size()==1){
+        version = version_input;
+    }
+
     if (version == "0") {
-        ALGORITHM::run_standard(clParser.inputFileName(), clParser.outputFileName(), alpha, logger);
+        ALGORITHM::run_standard(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), logger);
     } else if (version == "1") {
-        ALGORITHM::run_limited(clParser.inputFileName(), clParser.outputFileName(), alpha, threshold, logger);
+        ALGORITHM::run_limited(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getThreshold(),
+            logger);
     } else if (version == "2") {
-        ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputFileName(), alpha, threshold, logger);
-    } else if (version == "3") {
-        ALGORITHM::run_with_preprocessing(clParser.inputFileName(), clParser.outputFileName(), alpha, threshold, logger);
-    } else {
+        ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getPower(),
+            subversion, logger);
+    } else if (version == "3"){
+        ALGORITHM::run_preprocessed(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getDegree(),
+            clParser.getDistance(), subversion, logger);
+    } else if (version == "4") {
+        ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getDegree(),
+            clParser.getDistance(), subversion, logger);
+    }
+    else{
         std::cerr << "Unknown version: " << version << ". Supported versions are: standard, limited, subdivision.\n";
         return EXIT_FAILURE;
     }
-
     return EXIT_SUCCESS;
 }
 

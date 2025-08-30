@@ -18,11 +18,21 @@ public:
 
     std::string outputFileName() const;
 
+    std::string jsonFileName() const;
+
     double getAlpha() const;
 
     std::chrono::seconds getTimeLimit() const;
 
     std::string getVersion() const;
+
+    double getThreshold() const;
+
+    double getDegree() const;
+
+    double getDistance() const;
+
+    double getPower() const;
 
 private:
     cxxopts::ParseResult parseResult_;
@@ -31,9 +41,14 @@ private:
 
     inline static std::string INSTANCE = "instance";
     inline static std::string OUTPUT = "output";
+    inline static std::string JSON = "json";
     inline static std::string ALPHA = "alpha";
     inline static std::string TIMELIMIT = "timelimit";
     inline static std::string VERSION = "version";
+    inline static std::string THRESHOLD = "threshold";
+    inline static std::string DEGREE = "degree";
+    inline static std::string DISTANCE = "distance";
+    inline static std::string POWER = "power";
 };
 
 #endif //CL_PARSER_HPP
