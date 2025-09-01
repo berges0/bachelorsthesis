@@ -16,9 +16,9 @@ Grid root_grid(const std::vector<Segment_w_info> &segments, double to_the_power_
 
 void plot_grid(std::vector<Segment_w_info> segments, Grid grid);
 
-std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, int nr_polys, Grid grid);
+std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, Grid grid);
 
-std::vector<Segment_w_info> pwh_to_swi(std::vector<Polygon_with_holes_2> &polygons);
+std::vector<Segment_w_info> pwh_to_swi(std::vector<PWH> &polygons);
 
 } // namespace SUBDIVISION
 

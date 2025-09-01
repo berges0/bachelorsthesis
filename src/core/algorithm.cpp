@@ -3,20 +3,26 @@
 //
 #include "core/algorithm.hpp"
 
-#include "core/edge_relink.hpp"
 
 namespace ALGORITHM{
 
 void read_in (std::vector<Segment_w_info> &input_segments, const std::string &input_filename, Logger &logger) {
-    auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
-    logger.add("Number of input polygons", data.second.size());
 
-    input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
-    logger.add("Number of input segments", input_segments.size());
-
+    auto pos = input_filename.find_last_of('.');
+    if (pos == std::string::npos) {
+        throw std::runtime_error("input file doesnt have an extension");
+    };
+    std::string ext = input_filename.substr(pos + 1);
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    if (ext == "shp") {
+        IO_FUNCTIONS::SHP::read(input_filename, input_segments);
+    }
+    else if (ext == "gpkg") {
+        IO_FUNCTIONS::GPKG::read(input_filename, input_segments);
+    }
 }
 
-void aggregate(std::vector<Polygon_with_holes_2> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger) {
+void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger) {
 
     logger.start_operation();
     Arrangement arr = ARRANGEMENT::build_arrangement(input);
@@ -57,18 +63,21 @@ void run_standard(const std::string &input_filename, const std::string &output_f
     logger.end_operation("Extending edges (milliseconds) ");
 
     //JUST FOR DEBUGGING
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
 
-    std::vector<Polygon_with_holes_2> output_data;
+    std::vector<PWH> output_data;
 
     aggregate(output_data, extended_segments, alpha, logger);
 
-    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+    //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-    std::string command1 = "qgis " + input_filename + " &";
-    std::string command2 = "qgis " + output_filename + " &";
-    int i = std::system(command1.c_str());
-    int j = std::system(command2.c_str());
+    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, output_filename);
+
+    IO_FUNCTIONS::SHP::write_to_shp(output_data, output_filename);
+
+    std::string command = "qgis " + output_filename + ".gpkg " + input_filename + " &";
+    int status = std::system(command.c_str());
+
     logger.end();
 }
 
@@ -85,27 +94,24 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
     logger.end_operation("Extending edges (milliseconds) ");
 
-    std::vector<Polygon_with_holes_2> output_data;
+    std::vector<PWH> output_data;
 
     aggregate(output_data, extended_segments, alpha, logger);
 
-    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+    IO_FUNCTIONS::SHP::write_to_shp(output_data, output_filename);
 
-    std::string command1 = "qgis " + input_filename + " &";
-    std::string command2 = "qgis " + output_filename + " &";
-    int i = std::system(command1.c_str());
-    int j = std::system(command2.c_str());
+    std::string command = "qgis " + output_filename + ".gpkg " + input_filename + " &";
+    int status = std::system(command.c_str());
+
     logger.end();
 }
 
 void run_preprocessed(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
     double distance, std::string subversion, Logger &logger) {
 
-    auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
-    logger.add("Number of input polygons", data.second.size());
+    std::vector<Segment_w_info> input_segments;
 
-    std::vector<Segment_w_info> input_segments= IO_FUNCTIONS::read_in_segment(data.first, data.second);
-    logger.add("Number of input segments", input_segments.size());
+    read_in(input_segments, input_filename, logger);
 
     EDGE_EXTENSION::add_outer_box(input_segments, 0.01);
 
@@ -113,7 +119,7 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     logger.end_operation("Extending edges (milliseconds) ");
 
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
 
     auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
 
@@ -136,16 +142,17 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     assert(spatially_close.size()>0);
     std::vector<Segment_w_info> filtered_extended = spatially_close[0];
 
-    std::vector<Polygon_with_holes_2> output_data(0);
+    std::vector<PWH> output_data(0);
 
     aggregate(output_data, filtered_extended, alpha, logger);
 
-    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, output_filename);
 
-    std::string command1 = "qgis " + input_filename + " &";
-    std::string command2 = "qgis " + output_filename + " &";
-    int i = std::system(command1.c_str());
-    int j = std::system(command2.c_str());
+    IO_FUNCTIONS::SHP::write_to_shp(output_data, output_filename);
+
+    std::string command = "qgis " + output_filename + ".gpkg " + input_filename + " &";
+    int status = std::system(command.c_str());
+
     logger.end();
 }
 
@@ -162,6 +169,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     logger.end_operation("Extending edges (milliseconds) ");
 
+    std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
+
     auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
 
     auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
@@ -171,35 +180,38 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     auto relinked_segments = spatially_close[0];
 
-    std::vector<Polygon_with_holes_2> output_data(0);
+    std::cout<<"Number of segments after relinking: "<<relinked_segments.size()<<std::endl;
+
+    std::vector<PWH> output_data(0);
 
     aggregate(output_data, relinked_segments, alpha, logger);
 
-    IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, output_filename);
 
-    std::string command1 = "qgis " + input_filename + " &";
-    std::string command2 = "qgis " + output_filename + " &";
-    int i = std::system(command1.c_str());
-    int j = std::system(command2.c_str());
+    IO_FUNCTIONS::SHP::write_to_shp(output_data, output_filename);
+
+
+    std::string command = "qgis " + output_filename + ".gpkg " + input_filename + " &";
+    int status = std::system(command.c_str());
+
+
     logger.end();
 }
 
 
 void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double to_the_power_of,
     std::string subversion, Logger &logger) {
-    auto data = SHPLoader::ReadShapeFileToPoint2D(input_filename);
-    logger.add("Number of input polygons", data.second.size());
+    std::vector<Segment_w_info> input_segments;
 
-    auto input_segments = IO_FUNCTIONS::read_in_segment(data.first, data.second);
-    logger.add("Number of input segments", input_segments.size());
+    read_in(input_segments, input_filename, logger);
 
     logger.start_operation();
-    Grid grid = SUBDIVISION::root_grid(input_segments, 0.77);
-    auto subdivision = SUBDIVISION::subdivide_grid(input_segments,data.second.size(), grid);
+    Grid grid = SUBDIVISION::root_grid(input_segments, to_the_power_of);
+    auto subdivision = SUBDIVISION::subdivide_grid(input_segments, grid);
     logger.end_operation("Subdivision (milliseconds)");
     logger.add("Number of subdivisions", subdivision.size());
 
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(input_segments),"input.svg");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(input_segments),"input.svg");
     SUBDIVISION::plot_grid(input_segments, grid);
 
     int64_t extending_time = 0, build_arr_time = 0, build_graph_time = 0, max_flow_time = 0, combining_time = 0;
@@ -249,9 +261,9 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     assert (output_filename.size() >= 4 && output_filename.compare(output_filename.size() - 4, 4, ".shp") == 0);
     std::string subdiv_filename = output_filename.substr(0, output_filename.size() - 4) + "_subdivision.shp";
 
-    IO_FUNCTIONS::writeToShapeFile(output_data,subdiv_filename);
-    std::string command1 = "qgis " + subdiv_filename + " &";
-    int i = std::system(command1.c_str());
+    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, subdiv_filename);
+
+    IO_FUNCTIONS::SHP::write_to_shp(output_data,subdiv_filename);
 
     auto segs = SUBDIVISION::pwh_to_swi(output_data);
 
@@ -261,7 +273,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     auto extended = EDGE_EXTENSION::STANDARD::extension(segs);
     logger.end_operation("Final extending edges (milliseconds) ");
 
-    IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(extended),"extension_after_merge.svg");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended),"extension_after_merge.svg");
 
     logger.start_operation();
     Arrangement arr = ARRANGEMENT::build_arrangement(extended);
@@ -280,11 +292,14 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     auto final_output = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Final combining faces of solution (milliseconds)");
 
-    IO_FUNCTIONS::writeToShapeFile(final_output, output_filename);
-    std::string command2 = "qgis " + input_filename + " &";
-    std::string command3 = "qgis " + output_filename + " &";
-    int j = std::system(command2.c_str());
-    int k = std::system(command3.c_str());
+    IO_FUNCTIONS::GPKG::write_to_gpkg(final_output, output_filename);
+
+    IO_FUNCTIONS::SHP::write_to_shp(final_output, output_filename);
+
+
+    std::string command = "qgis " + output_filename + ".gpkg " + subdiv_filename + ".gpkg " + input_filename + " &";
+    int status = std::system(command.c_str());
+
 
     logger.end();
 }

@@ -5,17 +5,25 @@
 #include "core/edge_relink.hpp"
 
 #include "core/edge_extension.hpp"
+#include "io/io_functions.hpp"
 
 namespace EDGE_RELINK {
 void relink_edges(std::vector<std::vector<Segment_w_info>> &segments) {
     auto *skip = &segments[0];
+    int k = 0;
     for (auto &group : segments) {
         if ((&group == skip)||group.size() <= 1) continue;
+        IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), std::to_string(k++)+"_group_b.svg");
         auto relinked = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
+        std::vector<Segment> control;
         for (int i = 0; i < relinked.size() - 1; ++i) {
-            segments[0].push_back(Segment_w_info(Segment(relinked[i], relinked[i + 1]), false, -1,
-                -1, false, false));
+            Segment seg = Segment(relinked[i], relinked[i + 1]);
+            if (seg.squared_length() == 0) continue;
+            segments[0].emplace_back(seg, false, -1,
+                -1, false, false);
+            control.push_back({relinked[i],relinked[i + 1]});
         }
+        IO_FUNCTIONS::SVG::segments_to_svg(control, std::to_string(k)+"_group_a.svg");
     }
 }
 

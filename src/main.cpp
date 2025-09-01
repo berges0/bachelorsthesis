@@ -59,15 +59,15 @@ int main(int argc, char **argv) {
     } else if (version == "1") {
         ALGORITHM::run_limited(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getThreshold(),
             logger);
-    } else if (version == "2") {
-        ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getPower(),
-            subversion, logger);
-    } else if (version == "3"){
+    } else if (version == "2"){
         ALGORITHM::run_preprocessed(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getDegree(),
             clParser.getDistance(), subversion, logger);
-    } else if (version == "4") {
+    } else if (version == "3") {
         ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getDegree(),
             clParser.getDistance(), subversion, logger);
+    } else if (version == "4") {
+        ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getPower(),
+            subversion, logger);
     }
     else{
         std::cerr << "Unknown version: " << version << ". Supported versions are: standard, limited, subdivision.\n";

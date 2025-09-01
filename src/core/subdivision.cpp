@@ -70,7 +70,7 @@ Grid root_grid(const std::vector<Segment_w_info> &segments, double to_the_power_
     return grid;
 }
 
-std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, int nr_polys, Grid grid) {
+std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, Grid grid) {
     int curr_id = 0;
     std::vector<std::vector<Segment_w_info>> result(grid.nr_cells);
 
@@ -129,10 +129,10 @@ void plot_grid(std::vector<Segment_w_info> segments, Grid grid) {
         source2 = source2 + Vector(grid.stepX, 0);
         target2 = target2 + Vector(grid.stepX, 0);
     }
-    IO_FUNCTIONS::segments_to_svg(grid_plot, "grid.svg");
+    IO_FUNCTIONS::SVG::segments_to_svg(grid_plot, "grid.svg");
 }
 
-std::vector<Segment_w_info> pwh_to_swi(std::vector<Polygon_with_holes_2> &polygons) {
+std::vector<Segment_w_info> pwh_to_swi(std::vector<PWH> &polygons) {
     std::vector<Segment_w_info> segments;
     int seg_id=0;
     int poly_id=0;
@@ -164,7 +164,7 @@ std::vector<Segment_w_info> pwh_to_swi(std::vector<Polygon_with_holes_2> &polygo
 
         }
         // Holes
-        for (Polygon_with_holes_2::Hole_iterator hit = poly.holes_begin(); hit != poly.holes_end(); ++hit) {
+        for (PWH::Hole_iterator hit = poly.holes_begin(); hit != poly.holes_end(); ++hit) {
             if (!hit->is_clockwise_oriented()) {
                 hit->reverse_orientation();
                 std::cout << "Had to reverse orientation of hole in polygon with ID: " << poly_id << std::endl;

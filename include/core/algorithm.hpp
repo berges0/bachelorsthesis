@@ -7,18 +7,20 @@
 
 #include "core/arrangement.hpp"
 #include "core/edge_extension.hpp"
+#include "core/edge_relink.hpp"
 #include "core/graph.hpp"
 #include "core/max_flow.hpp"
 #include "core/subdivision.hpp"
 #include "core/preprocess.hpp"
 #include "io/io_functions.hpp"
+#include "io/gpkg.hpp"
 #include "utils/logger.hpp"
 
 namespace ALGORITHM{
 
     void read_in (std::vector<Segment_w_info> &input_segments, const std::string &input_filename, Logger &logger);
 
-    void aggregate(std::vector<Polygon_with_holes_2> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger);
+    void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger);
 
     void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger);
 

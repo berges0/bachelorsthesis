@@ -183,7 +183,7 @@ typedef CGAL::Arr_extended_dcel<Traits,
 typedef CGAL::Arrangement_with_history_2<Traits, DCEL>       Arrangement;
 
 typedef CGAL::Polygon_2<Kernel> Polygon_2;
-typedef CGAL::Polygon_with_holes_2<Kernel> Polygon_with_holes_2;
+typedef CGAL::Polygon_with_holes_2<Kernel> PWH;
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
     boost::no_property,

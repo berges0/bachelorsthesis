@@ -18,7 +18,7 @@ namespace ARRANGEMENT {
         }
 
         CGAL::insert(arr, curves.begin(), curves.end());
-
+        std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr);
         add_face_data(arr);
 

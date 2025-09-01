@@ -94,7 +94,7 @@ std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std:
     }
     int k=0;
     for (auto sg : spatially_close_groups) {
-        IO_FUNCTIONS::segments_to_svg(EDGE_EXTENSION::filter_segments(sg), std::to_string(k++) + "_spatial_group.svg");
+        IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(sg), std::to_string(k++) + "_spatial_group.svg");
     }
     return spatially_close_groups;
 }
@@ -173,84 +173,6 @@ void longest_mid_shortest_wins(std::vector<std::vector<Segment_w_info>> &spatial
         }
     }
 }
-/*
-std::vector<Segment_w_info> merge_edges(std::vector<std::vector<Segment_w_info>> spatial_groups,
-    std::vector<Segment_w_info> &input_segments, std::vector<Segment_w_info> &unmodified) {
-    std::vector<Segment_w_info> result=input_segments;
-    result.insert(result.end(), unmodified.begin(),unmodified.end());
-    auto just_segments=EDGE_EXTENSION::filter_segments(input_segments);
-    Tree tree(just_segments.begin(), just_segments.end());
-
-    for (auto &group : spatial_groups) {
-        assert(spatial_groups.size()>1);
-        std::vector<Point> pts;
-        pts.reserve(group.size() * 2);
-        for (const auto& s : group) {
-            pts.push_back(s.seg.source());
-            pts.push_back(s.seg.target());
-        }
-
-        Kernel::Line_2 line;
-        CGAL::linear_least_squares_fitting_2(
-            pts.begin(), pts.end(), line, CGAL::Dimension_tag<0>()); // Punkte → Linie
-
-        // Referenzpunkt auf der Linie + Richtungsvektor
-        Point p0 = line.point(0);
-        Kernel::Vector_2 v = line.to_vector();
-        Kernel::FT v2 = v.squared_length();                // keine Normierung nötig
-        if (v2 == Kernel::FT(0)) continue;
-
-        // 3) Projektionen auswerten: t = ((p - p0) · v) / |v|^2
-        auto proj_scalar = [&](const Point& p) -> Kernel::FT {
-            Kernel::Vector_2 w(p0, p);
-            return (w.x()*v.x() + w.y()*v.y()) / v2;
-        };
-
-        Kernel::FT min_t = proj_scalar(pts[0]);
-        Kernel::FT max_t = min_t;
-        Point min_p = pts[0], max_p = pts[0];
-
-        for (size_t i = 1; i < pts.size(); ++i) {
-            Kernel::FT t = proj_scalar(pts[i]);
-            if (t < min_t) { min_t = t; min_p = pts[i]; }
-            if (t > max_t) { max_t = t; max_p = pts[i]; }
-        }
-        Segment q(min_p, max_p);
-
-        // enge BBox des Query-Segments als Kandidatenfenster
-        auto a = q.source(), b = q.target();
-        Kernel::FT xmin = CGAL::min(a.x(), b.x());
-        Kernel::FT ymin = CGAL::min(a.y(), b.y());
-        Kernel::FT xmax = CGAL::max(a.x(), b.x());
-        Kernel::FT ymax = CGAL::max(a.y(), b.y());
-        Kernel::Iso_rectangle_2 rect(xmin, ymin, xmax, ymax);
-
-        std::vector<Primitive::Id> cand_ids;
-        tree.all_intersected_primitives(rect, std::back_inserter(cand_ids));
-        bool crossing = false;
-        for (auto it_id : cand_ids) {
-            int id = static_cast<int>(it_id - just_segments.begin());
-            auto res = CGAL::intersection(a, b);
-            if (!res) continue;
-            if (const Point* ip = std::get_if<Point>(&*res)) {
-                // Punkt-Schnitt: Endpunktkontakte ausschließen
-                if (*ip != q.source() && *ip != q.target()
-                    && *ip != just_segments[id].source() && *ip != just_segments[id].target()) {
-                    crossing=true;
-                    break;
-                    }
-            }
-        }
-        if (crossing) {
-            result.insert(result.end(), group.begin(), group.end());
-        }
-        else {
-            result.push_back(Segment_w_info(q,false, -1, -1, false, false));
-        }
-    }
-    return result;
-}
-*/
 }
 
 
