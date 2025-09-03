@@ -92,10 +92,6 @@ std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std:
             }
         }
     }
-    int k=0;
-    for (auto sg : spatially_close_groups) {
-        IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(sg), std::to_string(k++) + "_spatial_group.svg");
-    }
     return spatially_close_groups;
 }
 

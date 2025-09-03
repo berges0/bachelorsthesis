@@ -13,7 +13,7 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments) {
     int k = 0;
     for (auto &group : segments) {
         if ((&group == skip)||group.size() <= 1) continue;
-        IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), std::to_string(k++)+"_group_b.svg");
+        //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), std::to_string(k++)+"_group_b.svg");
         auto relinked = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
         std::vector<Segment> control;
         for (int i = 0; i < relinked.size() - 1; ++i) {
@@ -23,7 +23,7 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments) {
                 -1, false, false);
             control.push_back({relinked[i],relinked[i + 1]});
         }
-        IO_FUNCTIONS::SVG::segments_to_svg(control, std::to_string(k)+"_group_a.svg");
+        //IO_FUNCTIONS::SVG::segments_to_svg(control, std::to_string(k)+"_group_a.svg");
     }
 }
 
@@ -92,6 +92,16 @@ std::vector<Point> order_endpoints_along_main_dir(const std::vector<Segment>& se
     return ordered;
 }
 
+RTree build_r_tree(const std::vector<PWH> &polys) {
+    std::vector<RItem> items;
+    items.reserve((int)polys.size());
+    for (int i = 0; i < (int)polys.size(); ++i) {
+        CGAL::Bbox_2 b = polys[i].bbox();
+        items.emplace_back(BBox(BPoint(b.xmin(), b.ymin()), BPoint(b.xmax(), b.ymax())), i);
+    }
+    RTree rtree(items.begin(), items.end());
+    return rtree;
+}
 }
 
    /// Order endpoints from "left to right" along the predominant direction of the segments.

@@ -15,6 +15,11 @@ namespace ARRANGEMENT {
 
     void add_face_data(Arrangement &arr);
 
+    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh);
+
+    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &poly);
+
+    bool test_in_poly(const Point &qp, const RTree &rtree, const std::vector<PWH> &polys);
 
 }
 

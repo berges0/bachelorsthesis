@@ -4,17 +4,18 @@
 #ifndef IO_FUNCTIONS_HPP
 #define IO_FUNCTIONS_HPP
 
-#include "utils/pch.hpp"
-#include "gdal/ogrsf_frmts.h"
 #include "gdal/gdal_priv.h"
-
+#include "gdal/ogrsf_frmts.h"
+#include "utils/logger.hpp"
+#include "utils/pch.hpp"
+#include "utils/logger.hpp"
 
 namespace IO_FUNCTIONS {
 
     // SHP I/O
     namespace SHP {
 
-        void read(const std::string filename, std::vector<Segment_w_info>& segments);
+        void read(const std::string filename, std::vector<Segment_w_info>& segments, Logger &logger);
         void write_to_shp(std::vector<PWH> polys, std::string path);
 
     } // namespace SHP
@@ -22,7 +23,10 @@ namespace IO_FUNCTIONS {
     // GPKG I/O
     namespace GPKG {
 
-        void read(std::string filename, std::vector<Segment_w_info>& input_segments);
+        void read(std::string filename, std::vector<Segment_w_info>& input_segments, Logger &logger);
+
+        std::vector<PWH> read_gpkg_to_pwh(std::string filename);
+
         void write_to_gpkg(const std::vector<PWH>& polys, const std::string& path);
 
         // Helper: OGR -> CGAL

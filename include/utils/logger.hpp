@@ -16,7 +16,7 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
     class Logger {
     public:
 
-        explicit Logger(const std::string out_file_name);
+        explicit Logger(const std::string out_file_name, int64_t timelimit);
 
         void add(const std::string& event, JsonPushable auto&& value) {
             obj_[event] = std::forward<decltype(value)>(value);
@@ -27,10 +27,13 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
 
         std::chrono::duration<int64_t, std::milli> operation_duration();
 
+        bool in_Time();
+
         void end();
 
     private:
 
+        int64_t time_limit_ = 10000;
         std::string out_file_name_;
         Timer timer_;
         nlohmann::json obj_ = nlohmann::json::object();

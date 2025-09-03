@@ -11,11 +11,13 @@ namespace IO_FUNCTIONS {
 
 namespace SHP {
 
-void read(const std::string filename, std::vector<Segment_w_info>& segments) {
+void read(const std::string filename, std::vector<Segment_w_info>& segments, Logger &logger) {
 
     auto data = SHPLoader::ReadShapeFileToPoint2D(filename);
     auto points = data.first;
     auto polygons = data.second;
+    logger.add("Number of polygons in input", polygons.size());
+
     int seg_id=0;
     int poly_id=0;
 
@@ -152,7 +154,13 @@ namespace GPKG {
 
 inline std::string global_crs = "EPSG:4326";
 
-void read(std::string filename, std::vector<Segment_w_info>& input_segments) {
+void read(std::string filename, std::vector<Segment_w_info>& input_segments, Logger &logger) {
+    auto polys = read_gpkg_to_pwh(filename);
+    logger.add("Number of polygons in input", polys.size());
+    pwh_to_swi(polys, input_segments);
+}
+
+std::vector<PWH> read_gpkg_to_pwh(std::string filename) {
     std::vector<PWH> polys;
     // Register all drivers
     GDALAllRegister();
@@ -163,7 +171,7 @@ void read(std::string filename, std::vector<Segment_w_info>& input_segments) {
 
     if (poDS == nullptr) {
         std::cerr << "Failed to open GPKG: " << filename << std::endl;
-        return;
+        return polys;
     }
 
     // Loop over layers
@@ -225,7 +233,7 @@ void read(std::string filename, std::vector<Segment_w_info>& input_segments) {
     }
 
     GDALClose(poDS);
-    pwh_to_swi(polys, input_segments);
+    return polys;
 }
 
 //writes polygons to geopackage
@@ -248,7 +256,7 @@ void write_to_gpkg(const std::vector<PWH>& polys, const std::string& path) {
     srs.AutoIdentifyEPSG();
 
     const char* lco[] = { "FID=id", "GEOMETRY_NAME=geom", nullptr };
-    OGRLayer* layer = dataset->CreateLayer("polygons", &srs, wkbPolygon, const_cast<char**>(lco));
+    OGRLayer* layer = dataset->CreateLayer("", &srs, wkbPolygon, const_cast<char**>(lco));
     if (!layer) { GDALClose(dataset); throw std::runtime_error("Failed to create layer"); }
 
     for (const auto& poly : polys) {

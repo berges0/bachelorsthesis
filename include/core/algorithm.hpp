@@ -13,7 +13,6 @@
 #include "core/subdivision.hpp"
 #include "core/preprocess.hpp"
 #include "io/io_functions.hpp"
-#include "io/gpkg.hpp"
 #include "utils/logger.hpp"
 
 namespace ALGORITHM{

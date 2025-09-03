@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add external subdirectory (your shapefile loader lib)
 add_subdirectory(lib/shapefileaggregationloader)
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/output)
+
 # Find Boost
 find_package(Boost REQUIRED)
 

@@ -13,5 +13,6 @@ namespace EDGE_RELINK {
 
     std::vector<Point> order_endpoints_along_main_dir(const std::vector<Segment>& segs);
 
+    RTree build_r_tree(const std::vector<PWH>& polygons);
 }
 #endif //EDGE_RELINK_HPP

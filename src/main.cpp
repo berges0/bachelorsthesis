@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 
     std::string version_input = clParser.getVersion();
 
-    Logger logger(clParser.jsonFileName());
+    Logger logger(clParser.jsonFileName(), clParser.getTimeLimit().count());
 
     logger.add("Input file name", clParser.inputFileName());
     logger.add("Output file name", clParser.outputFileName());
@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
 
     if (version_input.size()>1) {
         assert(version_input.size()==3);
-        version = version_input.substr(0);
-        subversion = version_input.substr(3, version_input.size()-1);
+        version = version_input.substr(0,1);
+        subversion = version_input.substr(2, 1);
     }
     else if (version_input.size()==1){
         version = version_input;
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
             subversion, logger);
     }
     else{
-        std::cerr << "Unknown version: " << version << ". Supported versions are: standard, limited, subdivision.\n";
+        std::cerr << "Unknown version: " << version << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

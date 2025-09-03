@@ -10,3 +10,5 @@ for their objective function.
 
 In this project we use that min cut algorithm as a black box and try to implement and optimize a variation to the delauney
 triangulation in which, as said, the edge orientation of the polygons should be preserved. 
+
+
