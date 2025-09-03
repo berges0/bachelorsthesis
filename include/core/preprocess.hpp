@@ -24,6 +24,11 @@ void longest_and_shortest_wins(std::vector<std::vector<Segment_w_info>> &spatial
 std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std::vector<Segment_w_info>> &groups,
     double threshold_distance);
 
+std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vector<Segment_w_info> &segments, double degree,
+    double distance);
+
+std::vector<std::vector<int>> group_by_max_degree(const std::vector<std::vector<int>>& adj);
+
 std::vector<Segment_w_info> merge_spatially_close(std::vector<Segment_w_info> &input_segments,
     std::vector<std::vector<Segment_w_info>> &groups, double threshold_distance);
 

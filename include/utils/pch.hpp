@@ -42,6 +42,7 @@
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
+
 #include <stdexcept>
 #include <string>
 #include <CGAL/linear_least_squares_fitting_2.h>
@@ -202,10 +203,15 @@ typedef boost::graph_traits<GraphType>::vertices_size_type VertexIndex;
 typedef boost::graph_traits<GraphType>::edges_size_type EdgeIndex;
 
 
-typedef boost::geometry::model::d2::point_xy<double> BPoint;
-typedef boost::geometry::model::box<BPoint> BBox;
+
+namespace bg  = boost::geometry;
+namespace bgi = boost::geometry::index;
+
+typedef bg::model::d2::point_xy<double> BPoint;
+typedef bg::model::box<BPoint> BBox;
 typedef std::pair<BBox, int> RItem;
-typedef boost::geometry::index::rtree<RItem, boost::geometry::index::quadratic<16>> RTree;
+typedef bgi::rtree<RItem, bgi::quadratic<16>> RTree;
+
 
 //edges, weights, source_id, target_id, num_faces
 typedef std::tuple<std::vector<std::pair<int, int>>, std::vector<double>, int, int, int> Graph;

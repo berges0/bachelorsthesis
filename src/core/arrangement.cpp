@@ -154,7 +154,7 @@ bool test_in_poly(const Point &qp, const RTree &rtree, const std::vector<PWH> &p
 
         // --- Candidate lookup + exact test ---
         std::vector<RItem> hits;
-        rtree.query(boost::geometry::index::intersects(qbox), std::back_inserter(hits));
+        rtree.query(bgi::intersects(qbox), std::back_inserter(hits));
 
         bool inside_any = false;
         for (const auto& it : hits) {

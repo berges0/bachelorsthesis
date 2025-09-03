@@ -125,11 +125,17 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
 
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
 
-    auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
 
-    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
-        distance);
+    std::vector<std::vector<Segment_w_info>> spatially_close;
+    if (false) {
+        auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
 
+        spatially_close = PRE_PROCESS::spatially_close_groups(segs,
+            distance);
+    }
+    else {
+        spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
+    }
     if (subversion=="0") {
         PRE_PROCESS::longest_wins(spatially_close);
     }
@@ -145,6 +151,8 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
 
     assert(spatially_close.size()>0);
     std::vector<Segment_w_info> filtered_extended = spatially_close[0];
+
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(filtered_extended), "after_filtering.svg");
 
     std::vector<PWH> output_data(0);
     if (!logger.in_Time()){throw std::runtime_error("Time is up");}

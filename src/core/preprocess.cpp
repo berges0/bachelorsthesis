@@ -40,6 +40,168 @@ std::vector<std::vector<Segment_w_info>> group_degree(const std::vector<Segment_
     return result;
 }
 
+std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vector<Segment_w_info> &segments, double degree,
+    double distance) {
+    std::vector<Segment_w_info> input_segments;
+    std::vector<Segment_w_info> extended_segments;
+    for (const auto &seg : segments) {
+        if (seg.from_poly) {
+            input_segments.push_back(seg);
+        }
+        else {
+            extended_segments.push_back(seg);
+        }
+    }
+    std::vector<std::vector<Segment_w_info>> result;
+    result.push_back(input_segments);
+
+    double sqd_distance = distance * distance;
+    double theta_max = degree * M_PI / 180.0; // convert to radians
+    // Build boxes + R-tree
+    std::vector<RItem> items; items.reserve(extended_segments.size());
+    std::vector<BBox>  boxes(extended_segments.size());
+    for (int i = 0; i < (int)extended_segments.size(); ++i) {
+        auto bb = extended_segments[i].seg.bbox();
+        boxes[i] = BBox(BPoint(bb.xmin(), bb.ymin()), BPoint(bb.xmax(), bb.ymax()));
+        items.emplace_back(boxes[i], i);
+    }
+    RTree rtree(items.begin(), items.end()); // bulk load
+
+    // Precompute angles in [0, pi) so 180° ≡ 0°
+    std::vector<double> ang(extended_segments.size());
+    for (int i = 0; i < (int)extended_segments.size(); ++i) {
+        auto v = extended_segments[i].seg.to_vector();
+        double a = std::atan2(CGAL::to_double(v.y()), CGAL::to_double(v.x()));
+        if (a < 0) a += M_PI;        // normalize to [0, pi)
+        if (a >= M_PI) a -= M_PI;
+        ang[i] = a;
+    }
+
+    // Undirected adjacency
+    std::vector<std::vector<int>> adj(extended_segments.size());
+    std::vector<RItem> hits; hits.reserve(64);
+
+    for (int i = 0; i < (int)extended_segments.size(); ++i) {
+        // expand query box by r
+        BBox q = boxes[i];
+        q.min_corner().x(q.min_corner().x() - distance);
+        q.min_corner().y(q.min_corner().y() - distance);
+        q.max_corner().x(q.max_corner().x() + distance);
+        q.max_corner().y(q.max_corner().y() + distance);
+
+        hits.clear();
+        rtree.query(bgi::intersects(q), std::back_inserter(hits));
+
+        for (auto const& it : hits) {
+            int j = it.second;
+            if (j <= i) continue; // add once
+            if (CGAL::squared_distance(extended_segments[i].seg, extended_segments[j].seg) > sqd_distance) continue;
+
+            double d = std::fabs(ang[i] - ang[j]);
+            if (d > M_PI/2) d = M_PI - d; // fold (treat opposite directions as same)
+            if (d > theta_max) continue;
+
+            adj[i].push_back(j);
+            adj[j].push_back(i);
+        }
+    }
+
+    auto groups = group_by_max_degree(adj);
+    auto *skip = &groups[0];
+    for (auto &unmodified_id : groups[0]) {
+        result[0].push_back(extended_segments[unmodified_id]);
+    }
+
+    for (auto &id : groups) {
+        if (&id==skip)continue;
+        std::vector<Segment_w_info> grp;
+        for (int i : id) grp.push_back(extended_segments[i]);
+        if (!grp.empty()) {
+            result.push_back(grp);
+        }
+    }
+    return result;
+
+}
+// OUTPUT: groups[0] = all nodes that ended up with degree 0 (never grouped with others)
+// groups[1..] = groups formed by repeatedly taking the node of max degree
+
+std::vector<std::vector<int>> group_by_max_degree(const std::vector<std::vector<int>>& adj) {
+  const int n = (int)adj.size();
+  std::vector<int> deg(n);
+  std::vector<char> alive(n, 1);
+
+  // Initialize degrees and find maximum degree
+  int Delta = 0;
+  for (int u = 0; u < n; ++u) {
+    deg[u] = (int)adj[u].size();
+    Delta = std::max(Delta, deg[u]);
+  }
+
+  // Bucket-queue: bucket[d] holds nodes with degree d (lazy updates allowed)
+  std::vector<std::vector<int>> bucket(Delta + 1);
+  for (int u = 0; u < n; ++u) bucket[deg[u]].push_back(u);
+
+  // Helper: pop a valid node from the current max-degree bucket
+  auto pop_max = [&](int& cur)->int {
+    while (cur >= 0) {
+      auto &b = bucket[cur];
+      while (!b.empty()) {
+        int u = b.back(); b.pop_back();
+        if (alive[u] && deg[u] == cur) return u; // found a live, up-to-date node
+        // otherwise ignore stale entries
+      }
+      --cur; // move down to next lower degree
+    }
+    return -1;
+  };
+
+  // Result: groups[0] is reserved for all final degree-0 nodes
+  std::vector<std::vector<int>> groups;
+  groups.emplace_back(); // groups[0] = reserved
+
+  int cur = Delta;
+  int alive_cnt = n;
+
+  // Main loop: keep forming groups until the max degree is 0
+  while (true) {
+    int u = pop_max(cur);
+    if (u == -1 || deg[u] == 0) break; // no node with degree > 0 left
+
+    // Build group: u + all currently alive neighbors
+    std::vector<int> grp;
+    grp.push_back(u);
+    for (int v : adj[u]) if (alive[v]) grp.push_back(v);
+
+    // Kill all nodes in this group
+    for (int x : grp) {
+      if (!alive[x]) continue;
+      alive[x] = 0;
+      --alive_cnt;
+    }
+
+    // Update degrees of remaining alive neighbors
+    for (int x : grp) {
+      for (int y : adj[x]) if (alive[y]) {
+        int d = --deg[y];
+        bucket[d].push_back(y); // lazy insert with updated degree
+      }
+    }
+
+    // Append this group to the solution
+    groups.push_back(std::move(grp));
+  }
+
+  // Collect all remaining alive nodes (degree 0) into groups[0]
+  for (int u = 0; u < n; ++u) if (alive[u]) {
+    groups[0].push_back(u);
+    alive[u] = 0;
+    --alive_cnt;
+  }
+
+  return groups;
+}
+
 
 
 std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std::vector<Segment_w_info>> &groups, double threshold_distance) {
