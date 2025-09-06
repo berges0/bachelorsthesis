@@ -200,8 +200,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
 
-    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
-        distance);
+    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
+
 
     SUBSTITUTE_EDGES::relink_edges(spatially_close);
 
@@ -399,7 +399,7 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
 
-    auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
+    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
 
     auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
         distance);

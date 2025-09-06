@@ -135,7 +135,7 @@ namespace ARRANGEMENT {
                 n = n / len;   // unit vector to the left
 
                 // epsilon shift
-                double eps = 0.001; // pick your offset size
+                double eps = 0.00001; // pick your offset size
                 Point shifted = m + eps * n;
                 pure_poly = test_in_poly(shifted, rtree, polygonswh);
             }
