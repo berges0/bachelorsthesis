@@ -57,7 +57,7 @@ namespace GRAPH {
             }
             if (fit->data().belongs_to_poly) {
                 edges.emplace_back(face_id, source_id);
-                weights.push_back(DBL_MAX);
+                weights.push_back(alpha * (fit->data().area) * (fit->data().area));
                 edges.emplace_back(face_id, target_id);
                 weights.push_back(0.0);
             }
