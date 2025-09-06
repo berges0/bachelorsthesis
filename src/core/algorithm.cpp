@@ -21,6 +21,7 @@ void read_in (std::vector<Segment_w_info> &input_segments, const std::string &in
         IO_FUNCTIONS::GPKG::read(input_filename, input_segments, logger);
     }
     logger.add("Number of segments in input", input_segments.size());
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(input_segments), "input.svg" );
 }
 
 void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger) {
@@ -167,7 +168,7 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     logger.end();
 }
 
-void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
+void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double degree,
                      double distance, std::string subversion, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
@@ -176,13 +177,23 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     auto polygonswh = IO_FUNCTIONS::GPKG::read_gpkg_to_pwh(input_filename);
 
-    RTree rtree = EDGE_RELINK::build_r_tree(polygonswh);
+    RTree rtree = SUBSTITUTE_EDGES::build_r_tree(polygonswh);
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
     logger.start_operation();
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    std::vector<Segment_w_info> extended_segments;
+    if (subversion == "0") {
+        extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    }
+    else if (subversion == "1") {
+        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
+    }
+    else {
+        throw std::runtime_error("subversion not recognized");
+    }
     logger.end_operation("Extending edges (milliseconds) ");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
     if (!logger.in_Time()){throw std::runtime_error("Time is up");}
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
@@ -192,9 +203,10 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
         distance);
 
-    EDGE_RELINK::relink_edges(spatially_close);
+    SUBSTITUTE_EDGES::relink_edges(spatially_close);
 
     auto relinked_segments = spatially_close[0];
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(relinked_segments), "after_relink.svg");
 
     std::cout<<"Number of segments after relinking: "<<relinked_segments.size()<<std::endl;
 
@@ -337,6 +349,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     logger.end_operation("Final build graph (milliseconds) ");
 
     logger.start_operation();
+
     std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
     logger.end_operation("Final max flow (milliseconds) ");
 
@@ -353,5 +366,90 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
 
     logger.end();
 }
+
+
+void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double degree,
+                     double distance, std::string subversion, Logger &logger) {
+
+    std::vector<Segment_w_info> input_segments;
+
+    read_in(input_segments, input_filename, logger);
+
+    auto polygonswh = IO_FUNCTIONS::GPKG::read_gpkg_to_pwh(input_filename);
+
+    RTree rtree = SUBSTITUTE_EDGES::build_r_tree(polygonswh);
+
+    EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+
+
+    logger.start_operation();
+    std::vector<Segment_w_info> extended_segments;
+    if (subversion == "0") {
+        extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    }
+    else if (subversion == "1") {
+        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
+    }
+    else {
+        throw std::runtime_error("subversion not recognized");
+    }
+        logger.end_operation("Extending edges (milliseconds) ");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
+    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+
+    std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
+
+    auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
+
+    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
+        distance);
+
+    SUBSTITUTE_EDGES::connect_outer_points(spatially_close);
+
+    auto connected_outer_point = spatially_close[0];
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(connected_outer_point), "after_connect_outer.svg");
+
+    std::cout<<"Number of segments after relinking: "<<connected_outer_point.size()<<std::endl;
+
+    std::vector<PWH> output_data(0);
+    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+
+    logger.start_operation();
+    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(connected_outer_point, rtree, polygonswh);
+    logger.end_operation("Building Arragnement (milliseconds)");
+    logger.add("Number of segments after extension", arr.number_of_edges());
+    logger.add("Number of faces in arrangement", arr.number_of_faces());
+    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+
+    logger.start_operation();
+    Graph graph = GRAPH::build_graph(arr, alpha);
+    logger.end_operation("Building Graph (milliseconds)");
+    logger.add("Number of edges in graph", std::get<0>(graph).size());
+    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+
+    logger.start_operation();
+    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
+    logger.end_operation("Running Max Flow (milliseconds)");
+    int nr_faces_solution = 0;
+    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
+    logger.add("Number of faces solution", nr_faces_solution);
+
+    logger.start_operation();
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
+    logger.end_operation("Combining faces of solution (milliseconds)");
+    logger.add("Number of polygons in solution", holes_and_outer.first.size());
+    logger.add("Number of holes in solution", holes_and_outer.second.size());
+
+    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, output_filename + "_solution");
+
+    std::string command = "qgis " + output_filename + "_solution.gpkg " + input_filename + " &";
+    int status = std::system(command.c_str());
+
+
+    logger.end();
+}
+
+
 
 }

@@ -73,7 +73,7 @@ Grid root_grid(const std::vector<Segment_w_info> &segments, double to_the_power_
     return grid;
 }
 
-std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, Grid grid) {
+std::vector<std::vector<Segment_w_info>> subdivide_grid(const std::vector<Segment_w_info> &segments, Grid grid) {
     int curr_id = 0;
     std::vector<std::vector<Segment_w_info>> result(grid.nr_cells);
 
@@ -107,17 +107,24 @@ std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_in
 }
 
 
-std::vector<std::vector<Segment_w_info>> subdivide_grid_recursive(std::vector<Segment_w_info> segments, Grid grid, double power) {
+std::vector<std::vector<Segment_w_info>> subdivide_grid_recursive(const std::vector<Segment_w_info> &segments, Grid grid, double power) {
     std::vector<bool> skip (grid.nr_cells, false);
 
     auto subdivision=subdivide_grid(segments, grid);
+
+    double org_size = subdivision.size();
+    std::vector<double> last_grid_size(org_size,0.0);
     for (int i = 0; i < subdivision.size(); i++) {
         if (subdivision[i].size() > pow(segments.size(), power)) {
-
-            std::cout << "ENTERED "<<std::endl;
+            std::cout <<"Subdiv Size : "<< subdivision[i].size()<< " bigger than : " << std::to_string(pow(segments.size(),power))<<std::endl;
             auto subgrid = half_grid(subdivision[i]);
-            plot_grid(subdivision[i], subgrid, "grid_"+std::to_string(i)+".svg");
+            double grid_size = subgrid.lenX * subgrid.lenY;
+            if (last_grid_size[i]==grid_size) {
+                std::cout << "STUCK ENDLESS, SKIPPING "<<std::endl;
+                continue;
+            }
             auto splitted_again = subdivide_grid(subdivision[i],subgrid);
+
             if (subdivision.size()>skip.size()) {
                 skip.resize(subdivision.size());
             }
@@ -125,6 +132,7 @@ std::vector<std::vector<Segment_w_info>> subdivide_grid_recursive(std::vector<Se
             for (auto &subset : splitted_again) {
                 if (subset.empty()) continue;
                 subdivision.push_back(subset);
+                last_grid_size.push_back(grid_size);
             }
             skip.resize(subdivision.size(), false);
         }

@@ -2,28 +2,24 @@
 // Created by samuel-berge on 8/30/25.
 //
 
-#include "core/edge_relink.hpp"
+#include "core/substitute_edges.hpp"
 
 #include "core/edge_extension.hpp"
 #include "io/io_functions.hpp"
 
-namespace EDGE_RELINK {
+namespace SUBSTITUTE_EDGES {
 void relink_edges(std::vector<std::vector<Segment_w_info>> &segments) {
     auto *skip = &segments[0];
-    int k = 0;
     for (auto &group : segments) {
         if ((&group == skip)||group.size() <= 1) continue;
         //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), std::to_string(k++)+"_group_b.svg");
         auto relinked = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
-        std::vector<Segment> control;
         for (int i = 0; i < relinked.size() - 1; ++i) {
             Segment seg = Segment(relinked[i], relinked[i + 1]);
             if (seg.squared_length() == 0) continue;
             segments[0].emplace_back(seg, false, -1,
                 -1, false, false);
-            control.push_back({relinked[i],relinked[i + 1]});
         }
-        //IO_FUNCTIONS::SVG::segments_to_svg(control, std::to_string(k)+"_group_a.svg");
     }
 }
 
@@ -102,6 +98,24 @@ RTree build_r_tree(const std::vector<PWH> &polys) {
     RTree rtree(items.begin(), items.end());
     return rtree;
 }
+
+void connect_outer_points(std::vector<std::vector<Segment_w_info>> &segments) {
+    auto *skip = &segments[0];
+    //int k = 0;
+    for (auto &group : segments) {
+        if ((&group == skip)||group.size() <= 1) continue;
+        auto order = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
+        std::vector<Segment_w_info> segs;
+        //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), "group_" + std::to_string(k) + ".svg");
+        //std::cout<<"Distance "<<std::sqrt(CGAL::to_double(CGAL::squared_distance(group[0].seg, group[group.size()-1].seg)))<<std::endl;
+        Segment seg = Segment(order[0], order[order.size()-1]);
+        auto control = EDGE_EXTENSION::filter_segments(group);
+        control.push_back(seg);
+        //IO_FUNCTIONS::SVG::segments_to_svg(control, "group_" + std::to_string(k++) + "with_connection.svg");
+        if (seg.squared_length() == 0) continue;
+        segments[0].emplace_back(seg, false, -1,
+            -1, false, false);
+    }
 }
 
-   /// Order endpoints from "left to right" along the predominant direction of the segments.
+}

@@ -16,9 +16,9 @@ Grid root_grid(const std::vector<Segment_w_info> &segments, double to_the_power_
 
 void plot_grid(std::vector<Segment_w_info> segments, Grid grid, std::string file_name);
 
-std::vector<std::vector<Segment_w_info>> subdivide_grid(std::vector<Segment_w_info> segments, Grid grid);
+std::vector<std::vector<Segment_w_info>> subdivide_grid(const std::vector<Segment_w_info> &segments, Grid grid);
 
-std::vector<std::vector<Segment_w_info>> subdivide_grid_recursive(std::vector<Segment_w_info> segments, Grid grid, double power);
+std::vector<std::vector<Segment_w_info>> subdivide_grid_recursive(const std::vector<Segment_w_info> &segments, Grid grid, double power);
 
 Grid half_grid(const std::vector<Segment_w_info> &segments);
 

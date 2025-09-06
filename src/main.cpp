@@ -63,13 +63,15 @@ int main(int argc, char **argv) {
         ALGORITHM::run_preprocessed(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getDegree(),
             clParser.getDistance(), subversion, logger);
     } else if (version == "3") {
-        ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getDegree(),
-            clParser.getDistance(), subversion, logger);
+        ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getThreshold(),
+            clParser.getDegree(), clParser.getDistance(), subversion, logger);
     } else if (version == "4") {
         ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(), clParser.getPower(),
             subversion, logger);
-    }
-    else{
+    } else if (version == "5") {
+        ALGORITHM::run_outer_endpoints(clParser.inputFileName(), clParser.outputFileName(), clParser.getAlpha(),clParser.getThreshold()
+            , clParser.getDegree(), clParser.getDistance(), subversion, logger);
+    } else{
         std::cerr << "Unknown version: " << version << std::endl;
         return EXIT_FAILURE;
     }

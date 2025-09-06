@@ -7,11 +7,11 @@
 
 #include "core/arrangement.hpp"
 #include "core/edge_extension.hpp"
-#include "core/edge_relink.hpp"
 #include "core/graph.hpp"
 #include "core/max_flow.hpp"
-#include "core/subdivision.hpp"
 #include "core/preprocess.hpp"
+#include "core/subdivision.hpp"
+#include "core/substitute_edges.hpp"
 #include "io/io_functions.hpp"
 #include "utils/logger.hpp"
 
@@ -32,9 +32,11 @@ namespace ALGORITHM{
     void run_preprocessed(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
         double distance, std::string subversion, Logger &logger);
 
-    void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
-        double distance, std::string subversion, Logger &logger);
+    void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+        double degree, double distance, std::string subversion, Logger &logger);
 
+    void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+        double degree, double distance, std::string subversion, Logger &logger);
 
 }
 
