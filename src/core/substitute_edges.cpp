@@ -18,7 +18,7 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments) {
             Segment seg = Segment(relinked[i], relinked[i + 1]);
             if (seg.squared_length() == 0) continue;
             segments[0].emplace_back(seg, false, -1,
-                -1, false, false);
+                -1, false, false, true);
         }
     }
 }
@@ -114,7 +114,7 @@ void connect_outer_points(std::vector<std::vector<Segment_w_info>> &segments) {
         //IO_FUNCTIONS::SVG::segments_to_svg(control, "group_" + std::to_string(k++) + "with_connection.svg");
         if (seg.squared_length() == 0) continue;
         segments[0].emplace_back(seg, false, -1,
-            -1, false, false);
+            -1, false, false, true);
     }
 }
 

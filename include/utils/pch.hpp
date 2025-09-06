@@ -88,14 +88,18 @@ struct Segment_w_info{
     int poly_id;
     bool shoot_source;
     bool shoot_target;
+    bool replacing_edge;
     Segment_w_info()=default;
     Segment_w_info(const Segment& s, bool fp, int seg_id, int poly_id, bool shoot_source,
       bool shoot_target) : seg(s), from_poly(fp), seg_id(seg_id), poly_id(poly_id),  shoot_source(shoot_source),
       shoot_target(shoot_target) {}
+    Segment_w_info(const Segment& s, bool fp, int seg_id, int poly_id, bool shoot_source,
+      bool shoot_target, bool replacing_edge) : seg(s), from_poly(fp), seg_id(seg_id), poly_id(poly_id),  shoot_source(shoot_source),
+      shoot_target(shoot_target), replacing_edge(replacing_edge) {}
 };
 
-typedef bool CurveData;              // data attached to original Curve_2
-typedef bool XMonotoneCurveData;     // data attached to x-monotone curves
+typedef std::pair <bool,bool> CurveData;              // data attached to original Curve_2
+typedef std::pair <bool,bool> XMonotoneCurveData;     // data attached to x-monotone curves
 
 typedef CGAL::Arr_segment_traits_2<Kernel> BaseTraits;
 struct Merge {
@@ -103,7 +107,7 @@ struct Merge {
                                 const XMonotoneCurveData& d2) const {
     std::cout << "Merging data: " << std::endl;
     // for example: choose lower id, or add ids, etc.
-    return d1 || d2; // simple merge, just return true if any of the curves has data
+    return {(d1.first || d2.first), (d1.second || d2.second)}; // simple merge, just return true if any of the curves has data
   }
 };
 // Optional: define conversion functor from CurveData → XMonotoneCurveData
@@ -121,6 +125,7 @@ typedef Traits::Curve_2 Curve;
 struct HalfedgeData
 {
     bool frompoly;
+    bool replacing_edge=false;
     bool visited = false;
 };
 

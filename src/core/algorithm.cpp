@@ -198,7 +198,6 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
 
-    auto segs = PRE_PROCESS::group_degree(extended_segments, degree);
 
     auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
 
@@ -370,7 +369,6 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
 
 void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double degree,
                      double distance, std::string subversion, Logger &logger) {
-
     std::vector<Segment_w_info> input_segments;
 
     read_in(input_segments, input_filename, logger);
@@ -393,7 +391,7 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
     else {
         throw std::runtime_error("subversion not recognized");
     }
-        logger.end_operation("Extending edges (milliseconds) ");
+    logger.end_operation("Extending edges (milliseconds) ");
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
     if (!logger.in_Time()){throw std::runtime_error("Time is up");}
 
@@ -401,12 +399,10 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
     auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
 
-    auto spatially_close = PRE_PROCESS::spatially_close_groups(segs,
-        distance);
-
     SUBSTITUTE_EDGES::connect_outer_points(spatially_close);
 
     auto connected_outer_point = spatially_close[0];
+
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(connected_outer_point), "after_connect_outer.svg");
 
     std::cout<<"Number of segments after relinking: "<<connected_outer_point.size()<<std::endl;

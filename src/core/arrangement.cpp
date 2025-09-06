@@ -12,7 +12,7 @@ namespace ARRANGEMENT {
         int count11 = 0;
 
         for (const auto& seg : segments) {
-            Curve c(seg.seg, seg.from_poly);
+            Curve c(seg.seg, {seg.from_poly, seg.replacing_edge});
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
         }
@@ -31,9 +31,10 @@ namespace ARRANGEMENT {
             auto& edge = *eit;
             auto curve = edge.curve();
             const auto& unique_list = curve.data();
-            bool from_polygon = (*unique_list.begin())->data();
-            edge.set_data(HalfedgeData{from_polygon});
-            edge.twin()->set_data(HalfedgeData{from_polygon});
+            bool from_polygon = (*unique_list.begin())->data().first;
+            bool replacing_edge = (*unique_list.begin())->data().second;
+            edge.set_data(HalfedgeData{from_polygon, replacing_edge});
+            edge.twin()->set_data(HalfedgeData{from_polygon, replacing_edge});
         }
     }
 
@@ -79,7 +80,7 @@ namespace ARRANGEMENT {
         int count11 = 0;
 
         for (const auto& seg : segments) {
-            Curve c(seg.seg, seg.from_poly);
+            Curve c(seg.seg, {seg.from_poly, seg.replacing_edge});
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
         }
@@ -99,20 +100,24 @@ namespace ARRANGEMENT {
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
             poly.clear();
             bool pure_poly=false;
-            bool could_be_poly=false;
+            bool could_be_poly=true;
             if (fit->is_unbounded()) {
                 fit->set_data(FaceData(-1, false, DBL_MAX));
                 continue;
             }
             // outer boundary exists
+            if (!fit->has_outer_ccb()) {
+                throw std::runtime_error("Face has no outer CCB");
+                continue;
+            }
             auto circ = fit->outer_ccb();
             auto curr = circ;
             do {
                 const auto& source = curr->source()->point();
                 const auto& target = curr->target()->point();
                 poly.push_back(source);
-                if ((curr->data().frompoly)) {
-                    could_be_poly = true;
+                if (!(curr->data().frompoly)&&!(curr->data().replacing_edge)) {
+                    could_be_poly = false;
                 }
                 ++curr;
             } while (curr != circ);
@@ -135,7 +140,7 @@ namespace ARRANGEMENT {
                 n = n / len;   // unit vector to the left
 
                 // epsilon shift
-                double eps = 0.00001; // pick your offset size
+                double eps = 0.001; // pick your offset size
                 Point shifted = m + eps * n;
                 pure_poly = test_in_poly(shifted, rtree, polygonswh);
             }
@@ -149,6 +154,7 @@ namespace ARRANGEMENT {
     }
 
 bool test_in_poly(const Point &qp, const RTree &rtree, const std::vector<PWH> &polys) {
+        std::cout << "ENTERED"<< std::endl;
         BBox qbox(BPoint(CGAL::to_double(qp.x()), CGAL::to_double(qp.y())),
         BPoint(CGAL::to_double(qp.x()), CGAL::to_double(qp.y())));
 
