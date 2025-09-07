@@ -27,17 +27,17 @@ void read_in (std::vector<Segment_w_info> &input_segments, const std::string &in
 void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger) {
 
     logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement(input);
+    Arrangement arr = ARRANGEMENT::build_arrangement(input, logger);
     logger.end_operation("Building Arragnement (milliseconds)");
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha);
+    Graph graph = GRAPH::build_graph(arr, alpha, logger);
     logger.end_operation("Building Graph (milliseconds)");
     logger.add("Number of edges in graph", std::get<0>(graph).size());
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
     std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
@@ -65,7 +65,7 @@ void run_standard(const std::string &input_filename, const std::string &output_f
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     logger.end_operation("Extending edges (milliseconds) ");
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     //JUST FOR DEBUGGING
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
@@ -85,7 +85,7 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 }
 
 void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
-    Logger &logger) {
+    int th_variant, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
 
@@ -94,9 +94,9 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
     logger.start_operation();
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
     logger.end_operation("Extending edges (milliseconds) ");
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     std::vector<PWH> output_data;
 
@@ -122,7 +122,7 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     logger.end_operation("Extending edges (milliseconds) ");
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
 
@@ -156,7 +156,7 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(filtered_extended), "after_filtering.svg");
 
     std::vector<PWH> output_data(0);
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     aggregate(output_data, filtered_extended, alpha, logger);
 
@@ -168,8 +168,8 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     logger.end();
 }
 
-void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double degree,
-                     double distance, std::string subversion, Logger &logger) {
+void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+    double degree, int th_variant, double distance, std::string subversion, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
 
@@ -187,48 +187,52 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
         extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     }
     else if (subversion == "1") {
-        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
+        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant );
     }
     else {
         throw std::runtime_error("subversion not recognized");
     }
     logger.end_operation("Extending edges (milliseconds) ");
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
 
 
     auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
 
+    auto just_seg = EDGE_EXTENSION::filter_segments(input_segments);
+    Tree tree(just_seg.begin(), just_seg.end());
+    tree.build();
+    tree.accelerate_distance_queries();
 
-    SUBSTITUTE_EDGES::relink_edges(spatially_close);
+    SUBSTITUTE_EDGES::relink_edges(spatially_close, tree);
 
     auto relinked_segments = spatially_close[0];
 
     if (subversion=="1") {
         SUBSTITUTE_EDGES::post_prune(relinked_segments);
     }
+    std::cout<<"Number of segments after relinking: "<<relinked_segments.size()<<std::endl;
 
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(relinked_segments), "after_relink.svg");
 
-    std::cout<<"Number of segments after relinking: "<<relinked_segments.size()<<std::endl;
 
     std::vector<PWH> output_data(0);
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(relinked_segments, rtree, polygonswh);
+    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(relinked_segments, rtree, polygonswh, logger);
     logger.end_operation("Building Arragnement (milliseconds)");
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha);
+    Graph graph = GRAPH::build_graph(arr, alpha, logger);
     logger.end_operation("Building Graph (milliseconds)");
     logger.add("Number of edges in graph", std::get<0>(graph).size());
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
     std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
@@ -248,7 +252,6 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     std::string command = "qgis " + output_filename + "_solution.gpkg " + input_filename + " &";
     int status = std::system(command.c_str());
-
 
     logger.end();
 }
@@ -273,7 +276,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
         throw std::runtime_error("subversion not recognized");
     }
     SUBDIVISION::plot_grid(input_segments,grid, "grid.svg");
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.end_operation("Subdivision (milliseconds)");
     logger.add("Number of subdivisions", subdivision.size());
@@ -284,24 +287,24 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     std::vector<Polygon_2> polygons(0);
 
     for (auto &subset : subdivision) {
-        if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+        logger.in_Time();
         if (subset.empty()) continue;
         EDGE_EXTENSION::add_outer_box(subset, 0.01);
 
         logger.start_operation();
         std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(subset);
         extending_time += logger.operation_duration().count();
-        if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+        logger.in_Time();
 
         logger.start_operation();
-        Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments);
+        Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments, logger);
         build_arr_time += logger.operation_duration().count();
-        if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+        logger.in_Time();
 
         logger.start_operation();
-        Graph graph = GRAPH::build_graph(arr, alpha);
+        Graph graph = GRAPH::build_graph(arr, alpha, logger);
         build_graph_time += logger.operation_duration().count();
-        if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+        logger.in_Time();
 
         logger.start_operation();
         std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
@@ -345,11 +348,11 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended),"extension_after_merge.svg");
 
     logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement(extended);
+    Arrangement arr = ARRANGEMENT::build_arrangement(extended, logger);
     logger.end_operation("Final build arr (milliseconds) ");
 
     logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha);
+    Graph graph = GRAPH::build_graph(arr, alpha, logger);
     logger.end_operation("Final build graph (milliseconds) ");
 
     logger.start_operation();
@@ -372,8 +375,8 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
 }
 
 
-void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double degree,
-                     double distance, std::string subversion, Logger &logger) {
+void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+    int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
     std::vector<Segment_w_info> input_segments;
 
     read_in(input_segments, input_filename, logger);
@@ -391,14 +394,14 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
         extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     }
     else if (subversion == "1") {
-        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold);
+        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
     }
     else {
         throw std::runtime_error("subversion not recognized");
     }
     logger.end_operation("Extending edges (milliseconds) ");
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
 
@@ -417,20 +420,20 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
     std::cout<<"Number of segments after relinking: "<<connected_outer_point.size()<<std::endl;
 
     std::vector<PWH> output_data(0);
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(connected_outer_point, rtree, polygonswh);
+    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(connected_outer_point, rtree, polygonswh, logger);
     logger.end_operation("Building Arragnement (milliseconds)");
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha);
+    Graph graph = GRAPH::build_graph(arr, alpha, logger);
     logger.end_operation("Building Graph (milliseconds)");
     logger.add("Number of edges in graph", std::get<0>(graph).size());
-    if (!logger.in_Time()){throw std::runtime_error("Time is up");}
+    logger.in_Time();
 
     logger.start_operation();
     std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);

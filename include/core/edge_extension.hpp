@@ -19,7 +19,7 @@ const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segment
 }
 
 namespace LIMITED{
-const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments, double threshold);
+const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments, double threshold, int th_variant);
 
 const std::vector<Segment_w_info> post_process(const std::vector<Segment_w_info>& segments, const std::vector<bool>& to_prune);
 }

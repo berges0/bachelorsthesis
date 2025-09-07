@@ -16,6 +16,7 @@ cxxopts::Options CLParser::createParser() {
         (DEGREE, "Degree threshold", cxxopts::value<double>()->default_value("10")) //
         (DISTANCE, "Distance threshold", cxxopts::value<double>()->default_value("10"))//
         (POWER, "To the power of", cxxopts::value<double>()->default_value("0.5"))//
+        (THRESHOLDVARIANT, "Threshold variant", cxxopts::value<int>()->default_value("0")) //
         // real optional (no default)
         ;
     options.parse_positional({INSTANCE, OUTPUT, JSON});
@@ -68,4 +69,8 @@ double CLParser::getDistance() const {
 
 double CLParser::getPower() const {
     return parseResult_[POWER].as<double>();
+}
+
+int CLParser::getThresholdVariant() const {
+    return parseResult_[THRESHOLDVARIANT].as<int>();
 }

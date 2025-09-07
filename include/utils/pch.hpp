@@ -102,6 +102,8 @@ typedef std::pair <bool,bool> CurveData;              // data attached to origin
 typedef std::pair <bool,bool> XMonotoneCurveData;     // data attached to x-monotone curves
 
 typedef CGAL::Arr_segment_traits_2<Kernel> BaseTraits;
+
+
 struct Merge {
   XMonotoneCurveData operator()(const XMonotoneCurveData& d1,
                                 const XMonotoneCurveData& d2) const {

@@ -6,18 +6,20 @@
 #define ARRANGEMENT_HPP
 
 #include "utils/pch.hpp"
+#include "utils/logger.hpp"
 
 namespace ARRANGEMENT {
 
-    Arrangement build_arrangement(const std::vector<Segment_w_info>& segments);
+    Arrangement build_arrangement(const std::vector<Segment_w_info>& segments, Logger &logger);
 
-    void add_edge_data(Arrangement &arr);
+    void add_edge_data(Arrangement &arr, Logger &logger);
 
-    void add_face_data(Arrangement &arr);
+    void add_face_data(Arrangement &arr, Logger &logger);
 
-    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh);
+    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh,
+        Logger &logger);
 
-    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &poly);
+    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &poly, Logger &logger);
 
     bool test_in_poly(const Point &qp, const RTree &rtree, const std::vector<PWH> &polys);
 

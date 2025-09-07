@@ -17,7 +17,7 @@ namespace GRAPH {
         return std::sqrt(CGAL::to_double(squared_length));
     }
 
-    Graph build_graph(const Arrangement& arr, double alpha) {
+    Graph build_graph(const Arrangement& arr, double alpha, Logger &logger) {
         std::vector<std::pair<int, int>> edges;
         std::vector<double> weights;
         int num_faces = arr.number_of_faces()-1; // Exclude the unbounded face
@@ -25,6 +25,7 @@ namespace GRAPH {
         int target_id = num_faces + 1;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+            logger.in_Time();
             if (fit->is_unbounded() || !fit->has_outer_ccb()) {
                 continue; // skip the unbounded face
             }

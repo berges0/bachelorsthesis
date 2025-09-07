@@ -34,6 +34,8 @@ public:
 
     double getPower() const;
 
+    int getThresholdVariant() const;
+
 private:
     cxxopts::ParseResult parseResult_;
 
@@ -49,6 +51,7 @@ private:
     inline static std::string DEGREE = "degree";
     inline static std::string DISTANCE = "distance";
     inline static std::string POWER = "power";
+    inline static std::string THRESHOLDVARIANT = "th_variant";
 };
 
 #endif //CL_PARSER_HPP

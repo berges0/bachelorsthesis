@@ -8,19 +8,31 @@
 #include "io/io_functions.hpp"
 
 namespace SUBSTITUTE_EDGES {
-void relink_edges(std::vector<std::vector<Segment_w_info>> &segments) {
+void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree) {
     auto *skip = &segments[0];
+    std::vector <Segment> test;
     for (auto &group : segments) {
-        if ((&group == skip)||group.size() <= 1) continue;
+        if ((&group == skip)) continue;
+        if (group.size() == 1){std::cout << "SOMETHING BAD HAPPENED"<< std::endl;}
         //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), std::to_string(k++)+"_group_b.svg");
         auto relinked = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
+        int count = 0;
         for (int i = 0; i < relinked.size() - 1; ++i) {
             Segment seg = Segment(relinked[i], relinked[i + 1]);
-            if (seg.squared_length() == 0) continue;
+            if (seg.squared_length() == 0)continue;
+
+            Point mid_point = CGAL::midpoint(seg.source(), seg.target());
+            if (tree.any_intersection(mid_point)) {
+                test.push_back(seg);
+                continue;
+            };
             segments[0].emplace_back(seg, false, -1,
                 -1, false, false, true);
+            count++;
         }
     }
+    IO_FUNCTIONS::SVG::segments_to_svg(test, "testttttt.svg");
+    throw std::runtime_error("STOP");
 }
 
 struct EndpointAlongDir {

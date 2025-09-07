@@ -26,6 +26,11 @@ std::chrono::duration<int64_t, std::milli> Logger::operation_duration() {
 }
 
 bool Logger::in_Time() {
+    if (time_limit_ < timer_.elapsed().count()) {;
+        add("Time limit exceeded", std::to_string(timer_.elapsed().count()));
+        end();
+        throw std::runtime_error("Time limit exceeded");
+    }
     return (time_limit_ >= timer_.elapsed().count());
 }
 

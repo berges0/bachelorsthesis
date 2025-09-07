@@ -3,21 +3,30 @@
 //
 #include "core/arrangement.hpp"
 
+#include "utils/logger.hpp"
+
 namespace ARRANGEMENT {
 
-    Arrangement build_arrangement(const std::vector<Segment_w_info>& segments) {
+    Arrangement build_arrangement(const std::vector<Segment_w_info>& segments, Logger &logger) {
         Arrangement arr;
         std::vector<Curve> curves;
         int next_id = 0;
         int count11 = 0;
 
         for (const auto& seg : segments) {
+            logger.in_Time();
             Curve c(seg.seg, {seg.from_poly, seg.replacing_edge});
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
         }
 
-        CGAL::insert(arr, curves.begin(), curves.end());
+        for (auto it = curves.begin(); it != curves.end(); ) {
+            // füge z. B. 100 Kurven pro Schritt ein
+            auto next = std::next(it, std::min<size_t>(1000, std::distance(it, curves.end())));
+            CGAL::insert(arr, it, next);
+            it = next;
+            logger.in_Time();
+        }
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr);
         add_face_data(arr);
@@ -25,9 +34,10 @@ namespace ARRANGEMENT {
         return arr;
     }
 
-    void add_edge_data(Arrangement &arr) {
+    void add_edge_data(Arrangement &arr, Logger &logger) {
 
         for(auto eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+            logger.in_Time();
             auto& edge = *eit;
             auto curve = edge.curve();
             const auto& unique_list = curve.data();
@@ -38,12 +48,13 @@ namespace ARRANGEMENT {
         }
     }
 
-    void add_face_data(Arrangement &arr) {
+    void add_face_data(Arrangement &arr, Logger &logger) {
 
         size_t face_count = 0;
         Polygon_2 poly;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+            logger.in_Time();
             poly.clear();
             bool pure_poly;
             if (fit->is_unbounded()) {
@@ -73,19 +84,28 @@ namespace ARRANGEMENT {
     }
 
 
-    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh) {
+    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh,
+        Logger &logger) {
         Arrangement arr;
         std::vector<Curve> curves;
         int next_id = 0;
         int count11 = 0;
 
+
         for (const auto& seg : segments) {
+            logger.in_Time();
             Curve c(seg.seg, {seg.from_poly, seg.replacing_edge});
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
         }
 
-        CGAL::insert(arr, curves.begin(), curves.end());
+        for (auto it = curves.begin(); it != curves.end(); ) {
+            // füge z. B. 100 Kurven pro Schritt ein
+            auto next = std::next(it, std::min<size_t>(1000, std::distance(it, curves.end())));
+            CGAL::insert(arr, it, next);
+            it = next;
+            logger.in_Time();
+        }
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr);
         add_face_data_relinked(arr, rtree, polygonswh);
@@ -93,11 +113,12 @@ namespace ARRANGEMENT {
         return arr;
     }
 
-    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &polygonswh) {
+    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &polygonswh, Logger &logger) {
         size_t face_count = 0;
         Polygon_2 poly;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+            logger.in_Time();
             poly.clear();
             bool pure_poly=false;
             bool could_be_poly=true;

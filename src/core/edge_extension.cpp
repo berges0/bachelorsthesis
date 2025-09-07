@@ -51,9 +51,8 @@ namespace EDGE_EXTENSION {
     }
 
     namespace LIMITED{
-        const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments, double threshold) {
+        const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments, double threshold, int th_variant ) {
             int id = segments.size();
-
             std::vector<Segment> just_segments = filter_segments(segments);
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
@@ -69,8 +68,16 @@ namespace EDGE_EXTENSION {
 
                 Vector forward = p1 - p2;
                 Vector backward = p2 - p1;
-
-                double max_distance = threshold * get_distance(p1,p2);
+                double max_distance;
+                if (th_variant==0) {
+                    max_distance = threshold;
+                }
+                else if (th_variant==1) {
+                    max_distance = threshold * get_distance(p1, p2);
+                }
+                else {
+                    throw std::runtime_error("th_variant not recognized");
+                }
                 if (segments[count].shoot_source) {
                     auto hit_forward = first_intersection(p1, forward, tree, &segment);
                     if (!hit_forward || get_distance(p1, *hit_forward) > max_distance) {
@@ -211,10 +218,10 @@ namespace EDGE_EXTENSION {
         Point trc(maxX+set_off_x, maxY+set_off_y);
         Point brc(maxX+set_off_x, minY-set_off_y);
 
-        Segment_w_info edge1(Segment(blc, tlc), false, id++, -1, false,false);
-        Segment_w_info edge2(Segment(tlc, trc), false, id++, -1, false,false);
-        Segment_w_info edge3(Segment(trc, brc), false, id++, -1, false,false);
-        Segment_w_info edge4(Segment(brc, blc), false, id++, -1, false,false);
+        Segment_w_info edge1(Segment(blc, tlc), false, id++, -4, false,false);
+        Segment_w_info edge2(Segment(tlc, trc), false, id++, -4, false,false);
+        Segment_w_info edge3(Segment(trc, brc), false, id++, -4, false,false);
+        Segment_w_info edge4(Segment(brc, blc), false, id++, -4, false,false);
         segments.push_back(edge1);
         segments.push_back(edge2);
         segments.push_back(edge3);

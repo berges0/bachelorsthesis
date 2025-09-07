@@ -9,7 +9,7 @@
 
 namespace SUBSTITUTE_EDGES {
 
-    void relink_edges(std::vector<std::vector<Segment_w_info>> &segments);
+    void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree);
 
     std::vector<Point> order_endpoints_along_main_dir(const std::vector<Segment>& segs);
 

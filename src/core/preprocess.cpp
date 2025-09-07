@@ -101,7 +101,7 @@ std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vect
     std::vector<std::vector<Segment_w_info>> result(1);
 
     for (const auto &seg : segments) {
-        if (seg.from_poly) {
+        if (seg.from_poly || seg.poly_id==-4) { //-4 is for outer box
             result[0].push_back(seg);
         }
         else {
