@@ -205,6 +205,11 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     SUBSTITUTE_EDGES::relink_edges(spatially_close);
 
     auto relinked_segments = spatially_close[0];
+
+    if (subversion=="1") {
+        SUBSTITUTE_EDGES::post_prune(relinked_segments);
+    }
+
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(relinked_segments), "after_relink.svg");
 
     std::cout<<"Number of segments after relinking: "<<relinked_segments.size()<<std::endl;
@@ -402,6 +407,10 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
     SUBSTITUTE_EDGES::connect_outer_points(spatially_close);
 
     auto connected_outer_point = spatially_close[0];
+
+    if (subversion=="1") {
+        SUBSTITUTE_EDGES::post_prune(connected_outer_point);
+    }
 
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(connected_outer_point), "after_connect_outer.svg");
 

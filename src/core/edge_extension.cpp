@@ -70,7 +70,7 @@ namespace EDGE_EXTENSION {
                 Vector forward = p1 - p2;
                 Vector backward = p2 - p1;
 
-                double max_distance = threshold;// * get_distance(p1,p2);
+                double max_distance = threshold * get_distance(p1,p2);
                 if (segments[count].shoot_source) {
                     auto hit_forward = first_intersection(p1, forward, tree, &segment);
                     if (!hit_forward || get_distance(p1, *hit_forward) > max_distance) {
@@ -117,7 +117,6 @@ namespace EDGE_EXTENSION {
                 }
                 count++;
             }
-
             return post_process(all_segments, to_prune);
         }
 

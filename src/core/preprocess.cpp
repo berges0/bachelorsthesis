@@ -8,7 +8,7 @@
 #include "io/io_functions.hpp"
 
 namespace PRE_PROCESS {
-
+/*
 std::vector<std::vector<Segment_w_info>> group_degree(const std::vector<Segment_w_info> &segments, double deg_threshold) {
 
     //FIRST GROUP CONTAINS SEGMENTS TO BE IGNORED
@@ -40,20 +40,74 @@ std::vector<std::vector<Segment_w_info>> group_degree(const std::vector<Segment_
     return result;
 }
 
+
+std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std::vector<Segment_w_info>> &groups, double threshold_distance) {
+
+    //FIRST GROUP CONTAINS SEGMENTS TO BE IGNORED
+    std::vector<std::vector<Segment_w_info>> spatially_close_groups = {groups[0]};
+    const Kernel::FT th = Kernel::FT(threshold_distance); // convert once, keep exact
+
+    auto *skip = &groups[0];
+    for (auto &group:groups) {
+        if (&group==skip)continue;
+        std::vector<bool> visited(group.size(), false);
+        auto just_segments = EDGE_EXTENSION::filter_segments(group);
+        Tree tree(just_segments.begin(), just_segments.end());
+        tree.accelerate_distance_queries();
+
+        for (int i = 0; i < group.size(); ++i) {
+            if (visited[i])continue;
+            visited[i] = true;
+
+            std::vector<Segment_w_info> spatial_group(0);
+            const auto &segment = group[i];
+            spatial_group.push_back(segment);
+
+            auto a = just_segments[i].source();
+            auto b = just_segments[i].target();
+            Kernel::FT xmin = CGAL::min(a.x(), b.x()) - th;
+            Kernel::FT ymin = CGAL::min(a.y(), b.y()) - th;
+            Kernel::FT xmax = CGAL::max(a.x(), b.x()) + th;
+            Kernel::FT ymax = CGAL::max(a.y(), b.y()) + th;
+            Kernel::Iso_rectangle_2 rect(xmin, ymin, xmax, ymax);
+            std::vector<Primitive::Id> cand_ids;
+            tree.all_intersected_primitives(rect, std::back_inserter(cand_ids));
+            for (auto it_id : cand_ids) {
+                int id = static_cast<int>(it_id - just_segments.begin());
+                if (!visited[id]) {
+                    const auto &neighboor = group[id];
+                    if (CGAL::squared_distance(segment.seg, neighboor.seg)<th*th) {
+                        visited[id] = true;
+                        spatial_group.push_back(neighboor);
+                    }
+                }
+            }
+
+            if (spatial_group.size()>1) {
+                spatially_close_groups.push_back(spatial_group);
+            }
+            else if (spatial_group.size()==1) {
+                spatially_close_groups[0].push_back(spatial_group[0]);
+            }
+        }
+    }
+    return spatially_close_groups;
+}
+*/
 std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vector<Segment_w_info> &segments, double degree,
     double distance) {
     std::vector<Segment_w_info> input_segments;
     std::vector<Segment_w_info> extended_segments;
+    std::vector<std::vector<Segment_w_info>> result(1);
+
     for (const auto &seg : segments) {
         if (seg.from_poly) {
-            input_segments.push_back(seg);
+            result[0].push_back(seg);
         }
         else {
             extended_segments.push_back(seg);
         }
     }
-    std::vector<std::vector<Segment_w_info>> result;
-    result.push_back(input_segments);
 
     double sqd_distance = distance * distance;
     double theta_max = degree * M_PI / 180.0; // convert to radians
@@ -69,7 +123,7 @@ std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vect
 
     // Precompute angles in [0, pi) so 180° ≡ 0°
     std::vector<double> ang(extended_segments.size());
-    for (int i = 0; i < (int)extended_segments.size(); ++i) {
+    for (int i = 0; i < extended_segments.size(); ++i) {
         auto v = extended_segments[i].seg.to_vector();
         double a = std::atan2(CGAL::to_double(v.y()), CGAL::to_double(v.x()));
         if (a < 0) a += M_PI;        // normalize to [0, pi)
@@ -81,7 +135,7 @@ std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vect
     std::vector<std::vector<int>> adj(extended_segments.size());
     std::vector<RItem> hits; hits.reserve(64);
 
-    for (int i = 0; i < (int)extended_segments.size(); ++i) {
+    for (int i = 0; i < extended_segments.size(); ++i) {
         // expand query box by r
         BBox q = boxes[i];
         q.min_corner().x(q.min_corner().x() - distance);
@@ -107,11 +161,11 @@ std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vect
     }
 
     auto groups = group_by_max_degree(adj);
-    auto *skip = &groups[0];
     for (auto &unmodified_id : groups[0]) {
         result[0].push_back(extended_segments[unmodified_id]);
     }
 
+    auto *skip = &groups[0];
     for (auto &id : groups) {
         if (&id==skip)continue;
         std::vector<Segment_w_info> grp;
@@ -127,7 +181,7 @@ std::vector<std::vector<Segment_w_info>> group_by_degree_and_closeness(std::vect
 // groups[1..] = groups formed by repeatedly taking the node of max degree
 
 std::vector<std::vector<int>> group_by_max_degree(const std::vector<std::vector<int>>& adj) {
-  const int n = (int)adj.size();
+  const int n = adj.size();
   std::vector<int> deg(n);
   std::vector<char> alive(n, 1);
 
@@ -204,58 +258,6 @@ std::vector<std::vector<int>> group_by_max_degree(const std::vector<std::vector<
 
 
 
-std::vector<std::vector<Segment_w_info>> spatially_close_groups(std::vector<std::vector<Segment_w_info>> &groups, double threshold_distance) {
-
-    //FIRST GROUP CONTAINS SEGMENTS TO BE IGNORED
-    std::vector<std::vector<Segment_w_info>> spatially_close_groups = {groups[0]};
-    const Kernel::FT th = Kernel::FT(threshold_distance); // convert once, keep exact
-
-    auto *skip = &groups[0];
-    for (auto &group:groups) {
-        if (&group==skip)continue;
-        std::vector<bool> visited(group.size(), false);
-        auto just_segments = EDGE_EXTENSION::filter_segments(group);
-        Tree tree(just_segments.begin(), just_segments.end());
-        tree.accelerate_distance_queries();
-
-        for (int i = 0; i < group.size(); ++i) {
-            if (visited[i])continue;
-            visited[i] = true;
-
-            std::vector<Segment_w_info> spatial_group(0);
-            const auto &segment = group[i];
-            spatial_group.push_back(segment);
-
-            auto a = just_segments[i].source();
-            auto b = just_segments[i].target();
-            Kernel::FT xmin = CGAL::min(a.x(), b.x()) - th;
-            Kernel::FT ymin = CGAL::min(a.y(), b.y()) - th;
-            Kernel::FT xmax = CGAL::max(a.x(), b.x()) + th;
-            Kernel::FT ymax = CGAL::max(a.y(), b.y()) + th;
-            Kernel::Iso_rectangle_2 rect(xmin, ymin, xmax, ymax);
-            std::vector<Primitive::Id> cand_ids;
-            tree.all_intersected_primitives(rect, std::back_inserter(cand_ids));
-            for (auto it_id : cand_ids) {
-                int id = static_cast<int>(it_id - just_segments.begin());
-                if (!visited[id]) {
-                    const auto &neighboor = group[id];
-                    if (CGAL::squared_distance(segment.seg, neighboor.seg)<th*th) {
-                        visited[id] = true;
-                        spatial_group.push_back(neighboor);
-                    }
-                }
-            }
-
-            if (spatial_group.size()>1) {
-                spatially_close_groups.push_back(spatial_group);
-            }
-            else if (spatial_group.size()==1) {
-                spatially_close_groups[0].push_back(spatial_group[0]);
-            }
-        }
-    }
-    return spatially_close_groups;
-}
 
 void shortest_wins(std::vector<std::vector<Segment_w_info>> &spatially_close_groups) {
     // sort by segment_length descending

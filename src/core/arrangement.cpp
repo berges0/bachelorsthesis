@@ -154,7 +154,6 @@ namespace ARRANGEMENT {
     }
 
 bool test_in_poly(const Point &qp, const RTree &rtree, const std::vector<PWH> &polys) {
-        std::cout << "ENTERED"<< std::endl;
         BBox qbox(BPoint(CGAL::to_double(qp.x()), CGAL::to_double(qp.y())),
         BPoint(CGAL::to_double(qp.x()), CGAL::to_double(qp.y())));
 

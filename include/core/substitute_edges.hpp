@@ -16,5 +16,7 @@ namespace SUBSTITUTE_EDGES {
     RTree build_r_tree(const std::vector<PWH>& polygons);
 
     void connect_outer_points(std::vector<std::vector<Segment_w_info>> &segments);
+
+    void post_prune(std::vector<Segment_w_info> &segments);
 }
 #endif //SUBSTITUTE_EDGES_HPP
