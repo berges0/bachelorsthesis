@@ -97,6 +97,7 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
     logger.end_operation("Extending edges (milliseconds) ");
     logger.in_Time();
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments),"extended.svg");
 
     std::vector<PWH> output_data;
 
@@ -169,7 +170,7 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
 }
 
 void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
-    double degree, int th_variant, double distance, std::string subversion, Logger &logger) {
+    int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
 

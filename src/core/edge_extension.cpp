@@ -75,6 +75,9 @@ namespace EDGE_EXTENSION {
                 else if (th_variant==1) {
                     max_distance = threshold * get_distance(p1, p2);
                 }
+                else if (th_variant==2) {
+                    max_distance = threshold * std::sqrt(get_distance(p1, p2));
+                }
                 else {
                     throw std::runtime_error("th_variant not recognized");
                 }
