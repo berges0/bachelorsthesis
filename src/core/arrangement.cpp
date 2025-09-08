@@ -28,8 +28,8 @@ namespace ARRANGEMENT {
             logger.in_Time();
         }
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
-        add_edge_data(arr);
-        add_face_data(arr);
+        add_edge_data(arr, logger);
+        add_face_data(arr, logger);
 
         return arr;
     }
