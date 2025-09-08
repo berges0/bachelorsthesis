@@ -19,14 +19,15 @@ namespace ARRANGEMENT {
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
         }
+        CGAL::insert(arr, curves.begin(), curves.end());
 
-        for (auto it = curves.begin(); it != curves.end(); ) {
+       /* for (auto it = curves.begin(); it != curves.end(); ) {
             // füge z. B. 100 Kurven pro Schritt ein
             auto next = std::next(it, std::min<size_t>(1000, std::distance(it, curves.end())));
             CGAL::insert(arr, it, next);
             it = next;
             logger.in_Time();
-        }
+        }*/
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr, logger);
         add_face_data(arr, logger);
@@ -37,7 +38,6 @@ namespace ARRANGEMENT {
     void add_edge_data(Arrangement &arr, Logger &logger) {
 
         for(auto eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
-            logger.in_Time();
             auto& edge = *eit;
             auto curve = edge.curve();
             const auto& unique_list = curve.data();
@@ -54,7 +54,6 @@ namespace ARRANGEMENT {
         Polygon_2 poly;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-            logger.in_Time();
             poly.clear();
             bool pure_poly;
             if (fit->is_unbounded()) {
@@ -93,7 +92,6 @@ namespace ARRANGEMENT {
 
 
         for (const auto& seg : segments) {
-            logger.in_Time();
             Curve c(seg.seg, {seg.from_poly, seg.replacing_edge});
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
@@ -101,10 +99,9 @@ namespace ARRANGEMENT {
 
         for (auto it = curves.begin(); it != curves.end(); ) {
             // füge z. B. 100 Kurven pro Schritt ein
-            auto next = std::next(it, std::min<size_t>(1000, std::distance(it, curves.end())));
+            auto next = std::next(it, std::min<size_t>(10000, std::distance(it, curves.end())));
             CGAL::insert(arr, it, next);
             it = next;
-            logger.in_Time();
         }
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr, logger);

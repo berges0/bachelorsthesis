@@ -37,6 +37,28 @@ add_executable(aggregator
         include/core/substitute_edges.hpp
         src/core/substitute_edges.cpp
 )
+# Zweites Executable
+add_executable(metric
+        src/utils/metric.cpp
+)
+
+# (optional) gleiche PCH wie beim ersten Target
+target_precompile_headers(metric PRIVATE include/utils/pch.hpp)
+
+# gleiche Include-Pfade
+target_include_directories(metric PRIVATE
+        include
+        ${GDAL_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${CGAL_INCLUDE_DIRS}
+)
+
+# gleiche Libraries linken
+target_link_libraries(metric
+        PRIVATE GDAL::GDAL
+        PRIVATE CGAL::CGAL
+        PRIVATE instance_loader_lib
+)
 
 # Precompile headers
 target_precompile_headers(aggregator PRIVATE include/utils/pch.hpp)

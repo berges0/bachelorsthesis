@@ -23,7 +23,7 @@ namespace ALGORITHM{
 
     void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger);
 
-    void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+    void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
         int th_variant, Logger &logger);
 
     void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double to_the_power_of,
@@ -32,10 +32,10 @@ namespace ALGORITHM{
     void run_preprocessed(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
         double distance, std::string subversion, Logger &logger);
 
-    void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+    void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
         int th_variant, double degree, double distance, std::string subversion, Logger &logger);
 
-    void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+    void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
         int th_variant, double degree, double distance, std::string subversion, Logger &logger);
 
 }

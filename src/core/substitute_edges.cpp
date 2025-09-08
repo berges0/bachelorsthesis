@@ -32,7 +32,6 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree
         }
     }
     IO_FUNCTIONS::SVG::segments_to_svg(test, "testttttt.svg");
-    throw std::runtime_error("STOP");
 }
 
 struct EndpointAlongDir {

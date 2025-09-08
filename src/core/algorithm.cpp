@@ -60,6 +60,53 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 
     read_in(input_segments, input_filename, logger);
 
+    // Polygon 1: square (bottom-left)
+    Polygon_2 outer1;
+    outer1.push_back(Point(0,0));
+    outer1.push_back(Point(5,0));
+    outer1.push_back(Point(5,5));
+    outer1.push_back(Point(0,5));
+    PWH poly1(outer1);
+    std::cout << "Polygon 1 has holes? " << poly1.has_holes() << "\n";
+
+    // Polygon 2: square with a hole (shifted to the right)
+    Polygon_2 outer2;
+    outer2.push_back(Point(15,0));
+    outer2.push_back(Point(25,0));
+    outer2.push_back(Point(25,10));
+    outer2.push_back(Point(15,10));
+
+    Polygon_2 hole2;
+    hole2.push_back(Point(18,3));
+    hole2.push_back(Point(22,3));
+    hole2.push_back(Point(22,7));
+    hole2.push_back(Point(18,7));
+
+    PWH poly2(outer2);
+    poly2.add_hole(hole2);
+    std::cout << "Polygon 2 has holes? " << poly2.has_holes() << "\n";
+
+    // Polygon 3: triangle with a hole (shifted up)
+    Polygon_2 outer3;
+    outer3.push_back(Point(0,20));
+    outer3.push_back(Point(12,20));
+    outer3.push_back(Point(6,30));
+
+    Polygon_2 hole3;
+    hole3.push_back(Point(4,22));
+    hole3.push_back(Point(8,22));
+    hole3.push_back(Point(8,24));
+    hole3.push_back(Point(4,24));
+
+    PWH poly3(outer3);
+    poly3.add_hole(hole3);
+
+    input_segments.clear();
+    std::vector<PWH> polygonsss = {poly1,poly2,poly3};
+    IO_FUNCTIONS::pwh_to_swi(polygonsss, input_segments);
+
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(input_segments), "INPUTTT.svg");
+
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
     logger.start_operation();
@@ -84,7 +131,7 @@ void run_standard(const std::string &input_filename, const std::string &output_f
     logger.end();
 }
 
-void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
     int th_variant, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
@@ -92,6 +139,8 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     read_in(input_segments, input_filename, logger);
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+    
+    double threshold = EDGE_EXTENSION::compute_average_length(input_segments) * threshold_scale;
 
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
@@ -169,7 +218,7 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
     logger.end();
 }
 
-void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
     int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
@@ -181,6 +230,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     RTree rtree = SUBSTITUTE_EDGES::build_r_tree(polygonswh);
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+
+    double threshold = EDGE_EXTENSION::compute_average_length(input_segments) * threshold_scale;
 
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments;
@@ -376,7 +427,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
 }
 
 
-void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
     int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
     std::vector<Segment_w_info> input_segments;
 
@@ -388,6 +439,7 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
+    double threshold = EDGE_EXTENSION::compute_average_length(input_segments) * threshold_scale;
 
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments;

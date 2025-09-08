@@ -10,9 +10,11 @@
 
 namespace EDGE_EXTENSION {
 
+    double compute_average_length(std::vector<Segment_w_info>& segments);
+
     std::vector<Segment> filter_segments(const std::vector<Segment_w_info>& segments);
 
-void add_outer_box(std::vector<Segment_w_info>& segments, double offset);
+    void add_outer_box(std::vector<Segment_w_info>& segments, double offset);
 
 namespace STANDARD {
 const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments);

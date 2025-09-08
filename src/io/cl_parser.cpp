@@ -12,7 +12,7 @@ cxxopts::Options CLParser::createParser() {
         (ALPHA, "Alpha", cxxopts::value<double>()->default_value("0.1"))                  //
         (TIMELIMIT, "Maximum time in seconds", cxxopts::value<int>()->default_value("10000")) //
         (VERSION, "Algorithm version", cxxopts::value<std::string>()->default_value("0.0")) //
-        (THRESHOLD, "Threshold", cxxopts::value<double>()->default_value("3")) //
+        (THRESHOLDSCALE, "Threshold scale", cxxopts::value<double>()->default_value("0.5")) //
         (DEGREE, "Degree threshold", cxxopts::value<double>()->default_value("10")) //
         (DISTANCE, "Distance threshold", cxxopts::value<double>()->default_value("10"))//
         (POWER, "To the power of", cxxopts::value<double>()->default_value("0.5"))//
@@ -55,8 +55,8 @@ std::string CLParser::getVersion() const {
     return parseResult_[VERSION].as<std::string>();
 }
 
-double CLParser::getThreshold() const {
-    return parseResult_[THRESHOLD].as<double>();
+double CLParser::getThresholdScale() const {
+    return parseResult_[THRESHOLDSCALE].as<double>();
 }
 
 double CLParser::getDegree() const {

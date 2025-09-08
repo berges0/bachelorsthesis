@@ -9,6 +9,24 @@
 
 namespace EDGE_EXTENSION {
 
+    double compute_average_length(std::vector<Segment_w_info>& segments) {
+        double total_length = 0.0;
+        int count = 0;
+
+        for (const auto& seg_info : segments) {
+            const auto& seg = seg_info.seg;
+            double length = std::sqrt(CGAL::to_double(seg.squared_length()));
+            total_length += length;
+            count++;
+        }
+
+        if (count == 0) {
+            return 0.0; // Avoid division by zero
+        }
+
+        return total_length / count;
+    }
+
     namespace STANDARD {
         const std::vector<Segment_w_info> extension(std::vector<Segment_w_info>& segments) {
             int id = segments.size();
@@ -42,6 +60,7 @@ namespace EDGE_EXTENSION {
                         all_segments.emplace_back(Segment_w_info(Segment(p2, *hit_backward),false, id++,-1,false, false));
                         //std::cout<< "EMPLACED " << all_segments.back().seg.source().x() << " " << all_segments.back().seg.source().y()<<", "<< all_segments.back().seg.target().x()<<" "<<all_segments.back().seg.target().y()<<std::endl;
                     }
+
                 }
                 count++;
             }
@@ -76,7 +95,7 @@ namespace EDGE_EXTENSION {
                     max_distance = threshold * get_distance(p1, p2);
                 }
                 else if (th_variant==2) {
-                    max_distance = threshold * std::sqrt(get_distance(p1, p2));
+                    max_distance = threshold * std::sqrt(2+get_distance(p1, p2));
                 }
                 else {
                     throw std::runtime_error("th_variant not recognized");
@@ -127,6 +146,8 @@ namespace EDGE_EXTENSION {
                 }
                 count++;
             }
+
+            IO_FUNCTIONS::SVG::segments_to_svg(filter_segments(all_segments), "before_postprocess.svg");
             return post_process(all_segments, to_prune);
         }
 

@@ -26,7 +26,7 @@ public:
 
     std::string getVersion() const;
 
-    double getThreshold() const;
+    double getThresholdScale() const;
 
     double getDegree() const;
 
@@ -47,7 +47,7 @@ private:
     inline static std::string ALPHA = "alpha";
     inline static std::string TIMELIMIT = "timelimit";
     inline static std::string VERSION = "version";
-    inline static std::string THRESHOLD = "threshold";
+    inline static std::string THRESHOLDSCALE = "th_scale";
     inline static std::string DEGREE = "degree";
     inline static std::string DISTANCE = "distance";
     inline static std::string POWER = "power";
