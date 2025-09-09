@@ -3,11 +3,22 @@
 //
 #include "utils/logger.hpp"
 
-Logger::Logger(const std::string out_file_name, int64_t timelimit):out_file_name_(out_file_name), time_limit_(timelimit) {
+
+Logger::Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version) {
     timer_.start();
+    std::filesystem::path p(input_file);
+    std::string stem = p.stem().string();
+    std::string out_dir = output_directory + "/"+ stem + "_"+ version;
+    std::filesystem::create_directories(out_dir);
+    out_dir_stem_ = out_dir + "/" + stem + "_" + version;
     nlohmann::json j;
-    std::ofstream file(out_file_name_);
+    std::ofstream file(out_dir_stem_+"_log.json");
     file << j.dump(4) << std::endl; // pretty print with indentation
+
+}
+
+std::string Logger::out_dir_stem() {
+    return out_dir_stem_;
 }
 
 
@@ -37,7 +48,7 @@ bool Logger::in_Time() {
 void Logger::end() {
     timer_.stop();
     add("Overall Time taken by algorithm: " , std::to_string(timer_.elapsed().count()));
-    std::ofstream outFile(out_file_name_);
+    std::ofstream outFile(out_dir_stem_+"_log.json");
     outFile << obj_.dump(4) << std::endl;
     std::cout<< "Overall Time taken by algorithm: " << timer_.elapsed() << std::endl;
 }

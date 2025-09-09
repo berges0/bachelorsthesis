@@ -6,8 +6,7 @@ cxxopts::Options CLParser::createParser() {
     options.add_options()
         // positional
         (INSTANCE, "Instance file name", cxxopts::value<std::string>()) //
-        (OUTPUT, "Output file name", cxxopts::value<std::string>())     //
-        (JSON, "Json output file name", cxxopts::value<std::string>()) //
+        (OUTPUT, "Output directory", cxxopts::value<std::string>())     //
         // pseudo-optional (have default values)
         (ALPHA, "Alpha", cxxopts::value<double>()->default_value("0.1"))                  //
         (TIMELIMIT, "Maximum time in seconds", cxxopts::value<int>()->default_value("10000")) //
@@ -19,13 +18,13 @@ cxxopts::Options CLParser::createParser() {
         (THRESHOLDVARIANT, "Threshold variant", cxxopts::value<int>()->default_value("0")) //
         // real optional (no default)
         ;
-    options.parse_positional({INSTANCE, OUTPUT, JSON});
+    options.parse_positional({INSTANCE, OUTPUT});
     return options;
 }
 
 CLParser::CLParser(int argc, char **argv) {
     parseResult_ = createParser().parse(argc, argv);
-    if (parseResult_.count(INSTANCE) == 0 || parseResult_.count(OUTPUT) == 0 || parseResult_.count(JSON) == 0) {
+    if (parseResult_.count(INSTANCE) == 0 || parseResult_.count(OUTPUT) == 0) {
         throw std::invalid_argument("Missing required positional arguments");
     }
 }
@@ -34,12 +33,8 @@ std::string CLParser::inputFileName() const {
     return parseResult_[INSTANCE].as<std::string>();
 }
 
-std::string CLParser::outputFileName() const {
+std::string CLParser::outputDirectory() const {
     return parseResult_[OUTPUT].as<std::string>();
-}
-
-std::string CLParser::jsonFileName() const {
-    return parseResult_[JSON].as<std::string>();
 }
 
 

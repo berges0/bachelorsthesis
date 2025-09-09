@@ -25,7 +25,7 @@ namespace GRAPH {
         int target_id = num_faces + 1;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-            logger.in_Time();
+
             if (fit->is_unbounded() || !fit->has_outer_ccb()) {
                 continue; // skip the unbounded face
             }

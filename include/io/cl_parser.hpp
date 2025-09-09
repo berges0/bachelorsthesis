@@ -16,9 +16,7 @@ public:
 
     std::string inputFileName() const;
 
-    std::string outputFileName() const;
-
-    std::string jsonFileName() const;
+    std::string outputDirectory() const;
 
     double getAlpha() const;
 
@@ -43,7 +41,6 @@ private:
 
     inline static std::string INSTANCE = "instance";
     inline static std::string OUTPUT = "output";
-    inline static std::string JSON = "json";
     inline static std::string ALPHA = "alpha";
     inline static std::string TIMELIMIT = "timelimit";
     inline static std::string VERSION = "version";

@@ -14,20 +14,12 @@ namespace ARRANGEMENT {
         int count11 = 0;
 
         for (const auto& seg : segments) {
-            logger.in_Time();
             Curve c(seg.seg, {seg.from_poly, seg.replacing_edge});
             //std::cout << "Added segment from" << seg.from_poly << " polygon " << std::endl;
             curves.push_back(c);
         }
         CGAL::insert(arr, curves.begin(), curves.end());
 
-       /* for (auto it = curves.begin(); it != curves.end(); ) {
-            // füge z. B. 100 Kurven pro Schritt ein
-            auto next = std::next(it, std::min<size_t>(1000, std::distance(it, curves.end())));
-            CGAL::insert(arr, it, next);
-            it = next;
-            logger.in_Time();
-        }*/
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr, logger);
         add_face_data(arr, logger);
@@ -115,7 +107,6 @@ namespace ARRANGEMENT {
         Polygon_2 poly;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-            logger.in_Time();
             poly.clear();
             bool pure_poly=false;
             bool could_be_poly=true;
