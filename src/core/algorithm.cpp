@@ -20,7 +20,7 @@ void read_in (std::vector<Segment_w_info> &input_segments, const std::string &in
     }
     else if (ext == "gpkg") {
         IO_FUNCTIONS::GPKG::read(input_filename, input_segments, logger);
-        std::filesystem::copy_file(input_filename, logger.out_dir_stem()+"_input.gpkg");
+        //std::filesystem::copy_file(input_filename, logger.out_dir_stem()+"_input.gpkg");
     }
     logger.add("Number of segments in input", input_segments.size());
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(input_segments), "input.svg" );
