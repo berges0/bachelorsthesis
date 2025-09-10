@@ -112,10 +112,11 @@ namespace EDGE_EXTENSION {
                     max_distance = th_scale * get_distance(p1, p2);
                 }
                 else if (th_variant==2) {
-                    max_distance = threshold * get_distance(p1, p2);
+                    max_distance = th_scale * std::sqrt(get_distance(p1, p2));
+                    /*max_distance = threshold * get_distance(p1, p2);
                     if (max_distance > threshold) {
                         max_distance = threshold;
-                    }
+                    }*/
                 }
                 /*
                 else if (th_variant==4) {

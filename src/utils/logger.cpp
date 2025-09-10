@@ -13,6 +13,29 @@ Logger::Logger(const std::string input_file, const std::string output_directory,
     out_dir_stem_ = out_dir + "/" + stem + "_v" + version;
 }
 
+Logger::Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version,
+    double threshold, double th_scale, int threshold_variant) {
+    std::string suffix;
+    if (threshold_variant ==0) {
+        suffix = "_tv0_t" + std::to_string(threshold);
+    }
+    else if (threshold_variant == 1) {
+        suffix = "_tv1_ts" + std::to_string(th_scale);
+    }
+    else if (threshold_variant == 2) {
+        suffix = "_tv2_t" + std::to_string(threshold) + "_ts" + std::to_string(th_scale);
+    }
+    else{
+        throw std::runtime_error("threshold variant not recognized");
+    }
+    timer_.start();
+    std::filesystem::path p(input_file);
+    std::string stem = p.stem().string();
+    std::string out_dir = output_directory + "/"+ stem + "_v"+ version+ suffix;
+    std::filesystem::create_directories(out_dir);
+    out_dir_stem_ = out_dir + "/" + stem + "_v" + version+ suffix;
+}
+
 std::string Logger::out_dir_stem() {
     return out_dir_stem_;
 }

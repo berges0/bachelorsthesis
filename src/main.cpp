@@ -42,7 +42,14 @@ int main(int argc, char **argv) {
     }
 
     Logger logger(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
-        version_input);
+           version_input);
+
+    if (version == "1" ) {
+        Logger logger_1(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
+        version_input,clParser.getThreshold(), clParser.getThresholdScale(), clParser.getThresholdVariant());
+        logger=logger_1;
+    }
+
 
     logger.add("Input file name", clParser.inputFileName());
     logger.add("Output directory", clParser.outputDirectory());
