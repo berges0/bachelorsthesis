@@ -26,14 +26,9 @@ void read_in (std::vector<Segment_w_info> &input_segments, const std::string &in
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(input_segments), "input.svg" );
 }
 
-void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> &input, double alpha, Logger &logger) {
+void aggregate(std::vector<PWH> &output_data, Arrangement &arr, Logger &logger) {
 
-    logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement(input, logger);
-    logger.end_operation("Building Arragnement (milliseconds)");
-    logger.add("Number of segments after extension", arr.number_of_edges());
-    logger.add("Number of faces in arrangement", arr.number_of_faces());
-
+    double alpha = logger.alpha();
 
     logger.start_operation();
     Graph graph = GRAPH::build_graph(arr, alpha, logger);
@@ -67,20 +62,39 @@ void run_standard(const std::string &input_filename, const std::string &output_f
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     logger.end_operation("Extending edges (milliseconds) ");
-    
 
+
+    logger.start_operation();
+    Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments, logger);
+    logger.end_operation("Building Arragnement (milliseconds)");
+    logger.add("Number of segments after extension", arr.number_of_edges());
+    logger.add("Number of faces in arrangement", arr.number_of_faces());
+
+    logger.stop_time();
     std::vector<PWH> output_data;
+    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        0.0001 , 0.00001, 0.0};
 
-    aggregate(output_data, extended_segments, alpha, logger);
+    std::vector<Logger> loggers;
 
-    //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+    for (double alpha : alpha_values) {
+        Logger logger_(logger,alpha);
+        loggers.push_back(logger_);
+    }
+    for (auto logger_sub : loggers) {
+        logger_sub.start();
 
-    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger.out_dir_stem() + "_solution");
+        aggregate(output_data, arr, logger_sub);
 
-    std::string command = "qgis " + logger.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-    int status = std::system(command.c_str());
+        //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-    logger.end();
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
+
+        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        int status = std::system(command.c_str());
+
+        logger_sub.end_sub_log();
+    }
 }
 
 void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
@@ -98,16 +112,38 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
     logger.end_operation("Extending edges (milliseconds) ");
 
+    logger.start_operation();
+    Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments, logger);
+    logger.end_operation("Building Arragnement (milliseconds)");
+    logger.add("Number of segments after extension", arr.number_of_edges());
+    logger.add("Number of faces in arrangement", arr.number_of_faces());
+
+    logger.stop_time();
     std::vector<PWH> output_data;
+    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        0.0001 , 0.00001, 0.0};
 
-    aggregate(output_data, extended_segments, alpha, logger);
+    std::vector<Logger> loggers;
 
-    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger.out_dir_stem() + "_solution");
+    for (double alpha : alpha_values) {
+        Logger logger_(logger,alpha);
+        loggers.push_back(logger_);
+    }
+    for (auto logger_sub : loggers) {
+        output_data.clear();
+        logger_sub.start();
 
-    std::string command = "qgis " + logger.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-    int status = std::system(command.c_str());
+        aggregate(output_data, arr, logger_sub);
 
-    logger.end();
+        //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
+
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
+
+        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        int status = std::system(command.c_str());
+
+        logger_sub.end_sub_log();
+    }
 }
 
 void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
@@ -449,8 +485,14 @@ void run_preprocessed(const std::string &input_filename, const std::string &outp
 
     std::vector<PWH> output_data(0);
 
+    logger.start_operation();
+    Arrangement arr = ARRANGEMENT::build_arrangement(extended_segments, logger);
+    logger.end_operation("Building Arragnement (milliseconds)");
+    logger.add("Number of segments after extension", arr.number_of_edges());
+    logger.add("Number of faces in arrangement", arr.number_of_faces());
 
-    aggregate(output_data, filtered_extended, alpha, logger);
+
+    aggregate(output_data, arr, logger);
 
     IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger.out_dir_stem() + "_solution");
 

@@ -8,13 +8,9 @@ Logger::Logger(const std::string input_file, const std::string output_directory,
     timer_.start();
     std::filesystem::path p(input_file);
     std::string stem = p.stem().string();
-    std::string out_dir = output_directory + "/"+ stem + "_"+ version;
+    std::string out_dir = output_directory + "/"+ stem + "_v"+ version;
     std::filesystem::create_directories(out_dir);
     out_dir_stem_ = out_dir + "/" + stem + "_" + version;
-    nlohmann::json j;
-    std::ofstream file(out_dir_stem_+"_log.json");
-    file << j.dump(4) << std::endl; // pretty print with indentation
-
 }
 
 std::string Logger::out_dir_stem() {
@@ -52,6 +48,48 @@ void Logger::end() {
     outFile << obj_.dump(4) << std::endl;
     std::cout<< "Overall Time taken by algorithm: " << timer_.elapsed() << std::endl;
 }
+
+nlohmann::json Logger::obj() {
+    return obj_;
+}
+
+void Logger::stop_time() {
+    timer_.stop();
+}
+
+int64_t Logger::time() {
+    return timer_.elapsed().count();
+}
+
+Logger::Logger(Logger &logger, double alpha) {
+    alpha_ = alpha;
+    std::string dir = logger.out_dir_stem()+"_a" +std::to_string(alpha);
+    std::filesystem::create_directories(dir);
+    std::filesystem::path p(dir);
+    std::string stem = p.filename().string();
+    out_dir_stem_ = dir + "/" + stem;
+    obj_ = logger.obj();
+    until_now = logger.time();
+}
+
+
+void Logger::start() {
+    timer_.start();
+}
+
+double Logger::alpha() {
+    return alpha_;
+}
+
+void Logger::end_sub_log() {
+    timer_.stop();
+    int64_t overall=until_now + timer_.elapsed().count();
+    add("Overall Time taken by algorithm: " , std::to_string(overall));
+    std::ofstream outFile(out_dir_stem_+"_log.json");
+    outFile << obj_.dump(4) << std::endl;
+    std::cout<< "Overall Time taken by algorithm: " << std::to_string(overall) << std::endl;
+}
+
 
 
 
