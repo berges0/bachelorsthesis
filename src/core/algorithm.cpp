@@ -82,6 +82,7 @@ void run_standard(const std::string &input_filename, const std::string &output_f
         loggers.push_back(logger_);
     }
     for (auto logger_sub : loggers) {
+        output_data.clear();
         logger_sub.start();
 
         aggregate(output_data, arr, logger_sub);
@@ -90,8 +91,8 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 
         IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
 
-        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-        int status = std::system(command.c_str());
+        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        //int status = std::system(command.c_str());
 
         logger_sub.end_sub_log();
     }
@@ -139,8 +140,8 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
 
         IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
 
-        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-        int status = std::system(command.c_str());
+        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        //int status = std::system(command.c_str());
 
         logger_sub.end_sub_log();
     }
@@ -198,7 +199,7 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(relinked_segments), "after_relink.svg");
 
 
-    std::vector<PWH> output_data(0);
+    std::vector<PWH> output_data;
 
 
     logger.start_operation();
@@ -207,33 +208,31 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
 
+    logger.stop_time();
+    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        0.0001 , 0.00001, 0.0};
 
-    logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha, logger);
-    logger.end_operation("Building Graph (milliseconds)");
-    logger.add("Number of edges in graph", std::get<0>(graph).size());
+    std::vector<Logger> loggers;
 
+    for (double alpha : alpha_values) {
+        Logger logger_(logger,alpha);
+        loggers.push_back(logger_);
+    }
+    for (auto logger_sub : loggers) {
+        output_data.clear();
+        logger_sub.start();
 
-    logger.start_operation();
-    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
-    logger.end_operation("Running Max Flow (milliseconds)");
-    int nr_faces_solution = 0;
-    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
-    logger.add("Number of faces solution", nr_faces_solution);
+        aggregate(output_data, arr, logger_sub);
 
-    logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
-    output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
-    logger.end_operation("Combining faces of solution (milliseconds)");
-    logger.add("Number of polygons in solution", holes_and_outer.first.size());
-    logger.add("Number of holes in solution", holes_and_outer.second.size());
+        //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger.out_dir_stem() + "_solution");
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
 
-    std::string command = "qgis " + logger.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-    int status = std::system(command.c_str());
+        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        //int status = std::system(command.c_str());
 
-    logger.end();
+        logger_sub.end_sub_log();
+    }
 }
 
 
@@ -289,35 +288,32 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
 
+    logger.stop_time();
+    std::vector<PWH> output_data;
+    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        0.0001 , 0.00001, 0.0};
 
-    logger.start_operation();
-    Graph graph = GRAPH::build_graph(arr, alpha, logger);
-    logger.end_operation("Building Graph (milliseconds)");
-    logger.add("Number of edges in graph", std::get<0>(graph).size());
+    std::vector<Logger> loggers;
 
+    for (double alpha : alpha_values) {
+        Logger logger_(logger,alpha);
+        loggers.push_back(logger_);
+    }
+    for (auto logger_sub : loggers) {
+        output_data.clear();
+        logger_sub.start();
 
-    logger.start_operation();
-    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
-    logger.end_operation("Running Max Flow (milliseconds)");
-    int nr_faces_solution = 0;
-    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
-    logger.add("Number of faces solution", nr_faces_solution);
+        aggregate(output_data, arr, logger_sub);
 
-    logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
-    std::vector<PWH> output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
-    logger.end_operation("Combining faces of solution (milliseconds)");
-    logger.add("Number of polygons in solution", holes_and_outer.first.size());
-    logger.add("Number of holes in solution", holes_and_outer.second.size());
+        //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-    IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger.out_dir_stem() + "_solution");
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
 
-    std::string command = "qgis " + logger.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-    int status = std::system(command.c_str());
+        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        //int status = std::system(command.c_str());
 
-
-
-    logger.end();
+        logger_sub.end_sub_log();
+    }
 }
 
 void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double to_the_power_of,
