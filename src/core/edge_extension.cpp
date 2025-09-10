@@ -76,6 +76,18 @@ namespace EDGE_EXTENSION {
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
 
+
+            double max_length = 0.00001;
+            if (th_variant == 1) {
+                for (auto seg : just_segments) {
+                    if (CGAL::to_double(seg.squared_length()) > max_length) {
+                        max_length = CGAL::to_double(seg.squared_length());
+                    }
+                }
+            }
+            max_length = std::sqrt(max_length);
+
+
             std::vector<Segment_w_info> all_segments = segments;
             std::vector<bool> to_prune(segments.size(), false);
             int count = 0;
@@ -92,10 +104,10 @@ namespace EDGE_EXTENSION {
                     max_distance = threshold;
                 }
                 else if (th_variant==1) {
-                    max_distance = threshold * get_distance(p1, p2);
+                    max_distance = threshold * std::pow(get_distance(p1, p2)/max_length,0.5);
                 }
                 else if (th_variant==2) {
-                    max_distance = threshold * std::sqrt(2+get_distance(p1, p2));
+                    max_distance = threshold * std::sqrt(get_distance(p1, p2));
                 }
                 else {
                     throw std::runtime_error("th_variant not recognized");
