@@ -152,7 +152,7 @@ void write_to_shp(std::vector<PWH> polys, std::string path) {
 
 namespace GPKG {
 
-inline std::string global_crs = "EPSG:4326";
+inline std::string global_crs = "EPSG:25832";
 
 void read(std::string filename, std::vector<Segment_w_info>& input_segments, Logger &logger) {
     auto polys = read_gpkg_to_pwh(filename);
