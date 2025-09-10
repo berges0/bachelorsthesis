@@ -81,7 +81,10 @@ void run_standard(const std::string &input_filename, const std::string &output_f
         Logger logger_(logger,alpha);
         loggers.push_back(logger_);
     }
-    for (auto logger_sub : loggers) {
+    for (auto logger_sub : loggers){
+
+        logger_sub.add("Alpha", logger_sub.alpha());
+
         output_data.clear();
         logger_sub.start();
 
@@ -130,8 +133,11 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
         loggers.push_back(logger_);
     }
     for (auto logger_sub : loggers) {
+        logger_sub.add("Alpha", logger_sub.alpha());
+
         output_data.clear();
         logger_sub.start();
+
 
         aggregate(output_data, arr, logger_sub);
 
@@ -216,6 +222,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
         loggers.push_back(logger_);
     }
     for (auto logger_sub : loggers) {
+        logger_sub.add("Alpha", logger_sub.alpha());
+
         output_data.clear();
         logger_sub.start();
 
@@ -295,6 +303,8 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
         loggers.push_back(logger_);
     }
     for (auto logger_sub : loggers) {
+        logger_sub.add("Alpha", logger_sub.alpha());
+
         output_data.clear();
         logger_sub.start();
 

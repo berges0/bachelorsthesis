@@ -46,7 +46,6 @@ int main(int argc, char **argv) {
 
     logger.add("Input file name", clParser.inputFileName());
     logger.add("Output directory", clParser.outputDirectory());
-    logger.add("Alpha", clParser.getAlpha());
     logger.add("Version", version_input);
     logger.add("Threshold", clParser.getThreshold());
     logger.add("Threshold scale", clParser.getThresholdScale());
