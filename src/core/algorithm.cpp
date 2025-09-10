@@ -83,7 +83,7 @@ void run_standard(const std::string &input_filename, const std::string &output_f
     logger.end();
 }
 
-void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
+void run_limited(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double th_scale,
     int th_variant, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
@@ -91,11 +91,10 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     read_in(input_segments, input_filename, logger);
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
-    
-    double threshold = EDGE_EXTENSION::compute_average_length(input_segments) * threshold_scale;
 
     logger.start_operation();
-    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
+    std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold,
+        th_scale, th_variant);
     logger.end_operation("Extending edges (milliseconds) ");
 
     std::vector<PWH> output_data;
@@ -110,7 +109,7 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     logger.end();
 }
 
-void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
+void run_edge_relink(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold, double th_scale,
     int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
 
     std::vector<Segment_w_info> input_segments;
@@ -123,15 +122,13 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
-    double threshold = EDGE_EXTENSION::compute_average_length(input_segments) * threshold_scale;
-
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments;
     if (subversion == "0") {
         extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     }
     else if (subversion == "1") {
-        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant );
+        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_scale, th_variant );
     }
     else {
         throw std::runtime_error("subversion not recognized");
@@ -201,8 +198,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 }
 
 
-void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold_scale,
-    int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
+void run_outer_endpoints(const std::string &input_filename, const std::string &output_filename, double alpha, double threshold,
+    double th_scale, int th_variant, double degree, double distance, std::string subversion, Logger &logger) {
     std::vector<Segment_w_info> input_segments;
 
     read_in(input_segments, input_filename, logger);
@@ -213,15 +210,13 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
-    double threshold = EDGE_EXTENSION::compute_average_length(input_segments) * threshold_scale;
-
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments;
     if (subversion == "0") {
         extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
     }
     else if (subversion == "1") {
-        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_variant);
+        extended_segments = EDGE_EXTENSION::LIMITED::extension(input_segments, threshold, th_scale, th_variant);
     }
     else {
         throw std::runtime_error("subversion not recognized");

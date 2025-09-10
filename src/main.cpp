@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
     logger.add("Output directory", clParser.outputDirectory());
     logger.add("Alpha", clParser.getAlpha());
     logger.add("Version", version_input);
+    logger.add("Threshold", clParser.getThreshold());
     logger.add("Threshold scale", clParser.getThresholdScale());
     logger.add("Threshold_deg", clParser.getDegree());
     logger.add("Threshold_dist", clParser.getDistance());
@@ -59,20 +60,20 @@ int main(int argc, char **argv) {
     if (version == "0") {
         ALGORITHM::run_standard(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), logger);
     } else if (version == "1") {
-        ALGORITHM::run_limited(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getThresholdScale(),
-            clParser.getThresholdVariant(), logger);
+        ALGORITHM::run_limited(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getThreshold(),
+            clParser.getThresholdScale(), clParser.getThresholdVariant(), logger);
     } else if (version == "2"){
         ALGORITHM::run_preprocessed(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getDegree(),
             clParser.getDistance(), subversion, logger);
     } else if (version == "3") {
-        ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getThresholdScale(),
-        clParser.getThresholdVariant(), clParser.getDegree(), clParser.getDistance(), subversion, logger);
+        ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getThreshold(),
+            clParser.getThresholdScale(), clParser.getThresholdVariant(), clParser.getDegree(), clParser.getDistance(), subversion, logger);
     } else if (version == "4") {
         ALGORITHM::run_subdivision(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getPower(),
             subversion, logger);
     } else if (version == "5") {
-        ALGORITHM::run_outer_endpoints(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(),clParser.getThresholdScale(),
-            clParser.getThresholdVariant(), clParser.getDegree(), clParser.getDistance(), subversion, logger);
+        ALGORITHM::run_outer_endpoints(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(),clParser.getThreshold(),
+            clParser.getThresholdScale(), clParser.getThresholdVariant(), clParser.getDegree(), clParser.getDistance(), subversion, logger);
     } else{
         std::cerr << "Unknown version: " << version << std::endl;
         return EXIT_FAILURE;
