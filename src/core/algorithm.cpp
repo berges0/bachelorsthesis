@@ -31,7 +31,8 @@ void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> 
     logger.start_operation();
     Arrangement arr = ARRANGEMENT::build_arrangement(input, logger);
     logger.end_operation("Building Arragnement (milliseconds)");
-    logger.add("Number of segments after extension", arr.number_of_edges());
+    logger.add("Number of edges in arrangement", arr.number_of_edges());
+    logger.add("Number of halfedges in arrangement", arr.number_of_halfedges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
 
 
@@ -58,14 +59,16 @@ void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> 
 
 void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger) {
 
-    std::vector<Segment_w_info> input_segments;
+    std::vector<Segment_w_info> input_segments(0);
 
     read_in(input_segments, input_filename, logger);
-
+    std::cout<<"INPUT SEGMENTS = "<<input_segments.size()<<std::endl;
     EDGE_EXTENSION::add_outer_box(input_segments,0.01);
 
     logger.start_operation();
     std::vector<Segment_w_info> extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+    std::cout<<"NUMBER OF EXTENDED = "<<extended_segments.size()<<std::endl;
+    logger.add("Number of edges after extension (+bbox)", extended_segments.size());
     logger.end_operation("Extending edges (milliseconds) ");
     
 
