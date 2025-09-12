@@ -11,6 +11,104 @@ namespace IO_FUNCTIONS {
 
 namespace SHP {
 
+// Assumed typedefs already in your codebase:
+// using Kernel    = ...;
+// using Point_2   = Kernel::Point_2;
+// using Polygon_2 = CGAL::Polygon_2<Kernel>;
+// using PWH       = CGAL::Polygon_with_holes_2<Kernel>;
+
+// Helper: push a ring [start, end) from SHP arrays into a Polygon_2, dropping a duplicate last==first if present.
+static Polygon_2 make_polygon_from_part(const double* X, const double* Y, int start, int end) {
+    assert(end >= start);
+    Polygon_2 poly;
+
+    // If last point duplicates first, ignore it.
+    int last = end - 1;
+    bool has_duplicate_close = (end - start) >= 2 &&
+        X[start] == X[last] && Y[start] == Y[last];
+
+    int limit = has_duplicate_close ? last : end;
+    poly.reserve(limit - start);
+    for (int i = start; i < limit; ++i) {
+        poly.push_back(Point(X[i], Y[i]));
+    }
+    return poly;
+}
+
+std::vector<PWH> read_shp_to_pwh(const std::string& path) {
+    std::vector<PWH> result;
+
+    const std::string shp_path = path + ".shp";
+    SHPHandle shp = SHPOpen(shp_path.c_str(), "rb");
+    if (!shp) {
+        // Couldn't open shapefile
+        return result;
+    }
+
+    int entity_count = 0;
+    int shape_type   = 0;
+    double minb[4], maxb[4];
+    SHPGetInfo(shp, &entity_count, &shape_type, minb, maxb);
+
+    // We expect polygons
+    if (!(shape_type == SHPT_POLYGON || shape_type == SHPT_POLYGONZ || shape_type == SHPT_POLYGONM)) {
+        // Not a polygon shapefile; bail out cleanly.
+        SHPClose(shp);
+        return result;
+    }
+
+    result.reserve(entity_count);
+
+    for (int i = 0; i < entity_count; ++i) {
+        SHPObject* obj = SHPReadObject(shp, i);
+        if (!obj) continue;
+
+        // Skip null/empty shapes
+        if (obj->nParts <= 0 || obj->nVertices <= 0) {
+            SHPDestroyObject(obj);
+            continue;
+        }
+
+        const double* X = obj->padfX;
+        const double* Y = obj->padfY;
+
+        // Compute part start/end indices
+        std::vector<int> starts(obj->nParts);
+        for (int p = 0; p < obj->nParts; ++p) starts[p] = obj->panPartStart[p];
+
+        std::vector<int> ends(obj->nParts);
+        for (int p = 0; p < obj->nParts - 1; ++p) ends[p] = starts[p + 1];
+        ends.back() = obj->nVertices;
+
+        // Outer ring = part 0
+        Polygon_2 outer = make_polygon_from_part(X, Y, starts[0], ends[0]);
+
+        // Normalize orientations to match your writer (outer CCW, holes CW)
+        if (outer.is_clockwise_oriented()) outer.reverse_orientation();
+
+        // Holes = parts 1..n-1
+        std::vector<Polygon_2> holes;
+        holes.reserve(std::max(0, obj->nParts - 1));
+        for (int p = 1; p < obj->nParts; ++p) {
+            Polygon_2 hole = make_polygon_from_part(X, Y, starts[p], ends[p]);
+            // Ensure CW for holes
+            if (hole.is_counterclockwise_oriented()) hole.reverse_orientation();
+            // Ignore degenerate holes
+            if (hole.size() >= 3) holes.push_back(std::move(hole));
+        }
+
+        if (outer.size() >= 3) {
+            result.emplace_back(outer, holes.begin(), holes.end());
+        }
+
+        SHPDestroyObject(obj);
+    }
+
+    SHPClose(shp);
+    return result;
+}
+
+
 void read(const std::string filename, std::vector<Segment_w_info>& segments, Logger &logger) {
 
     auto data = SHPLoader::ReadShapeFileToPoint2D(filename);
@@ -65,7 +163,7 @@ void read(const std::string filename, std::vector<Segment_w_info>& segments, Log
     }
 }
 
-void write_to_shp(std::vector<PWH> polys, std::string path) {
+void write_to_shp(const std::vector<PWH> polys, const std::string path) {
 
     std::string file = path + ".shp";
     //create handle
@@ -557,14 +655,16 @@ namespace SVG {
 }// namespace SVG
 
 const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  combine_polygons(const std::vector<bool>
-&in_solution, Arrangement &arr) {
+&in_solution, const Arrangement &arr) {
     std::cout<<"GROUPSSIZE"<<in_solution.size()<<std::endl;
     std::vector<Polygon_2> outer_boundaries;
     std::vector<Polygon_2> holes;
-    for (Arrangement::Halfedge_iterator eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit) {
+    std::vector<bool> visited (arr.number_of_halfedges(), false);
+
+    for (auto eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit) {
         auto eitc = eit;
-        if (!eitc->data().visited && in_solution[eitc->face()->data().id] && (!in_solution[eitc->twin()->face()->data().id]||eitc->twin()->face()->is_unbounded())) {
-            Polygon_2 poly = get_contiguous_boundary(eitc, in_solution);
+        if (!visited[eitc->data().id] && in_solution[eitc->face()->data().id] && (!in_solution[eitc->twin()->face()->data().id]||eitc->twin()->face()->is_unbounded())) {
+            Polygon_2 poly = get_contiguous_boundary(eitc, in_solution, visited);
             assert(poly.is_simple());
             if (poly.is_counterclockwise_oriented()) {
                 outer_boundaries.emplace_back(poly);
@@ -580,21 +680,22 @@ const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  combine_polygo
 }
 
 
-const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle &edge, const std::vector<bool> &in_solution) {
+const Polygon_2 get_contiguous_boundary(const Arrangement::Halfedge_const_handle& edge, const std::vector<bool> &in_solution, std::vector<bool> &visited) {
 
     assert(in_solution[edge->face()->data().id] && (!in_solution[edge->twin()->face()->data().id])||edge->twin()->face()->is_unbounded());
     Polygon_2 polygon;
+    auto current = edge;
     do {
-        edge->data().visited = true;
-        if (!in_solution[edge->twin()->face()->data().id] || edge->twin()->face()->is_unbounded()) {
-            polygon.push_back(edge->source()->point());
-            if (edge->target()->point() == *(polygon.vertices_begin())) {
+        visited[current->data().id] = true;
+        if (!in_solution[current->twin()->face()->data().id] || current->twin()->face()->is_unbounded()) {
+            polygon.push_back(current->source()->point());
+            if (current->target()->point() == *(polygon.vertices_begin())) {
                 return polygon; // finished
             }
-            edge = edge->next();
+            current = current->next();
         }
         else {
-            edge = edge->twin()->next();
+            current = current->twin()->next();
         }
     }while (true);
 

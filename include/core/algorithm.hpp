@@ -19,7 +19,7 @@ namespace ALGORITHM{
 
     void read_in (std::vector<Segment_w_info> &input_segments, const std::string &input_filename, Logger &logger);
 
-    void aggregate(std::vector<PWH> &output_data, Arrangement &arr, Logger &logger);
+    void aggregate(std::vector<PWH> &output_data, const Arrangement &arr, Logger &logger);
 
     void run_standard(const std::string &input_filename, const std::string &output_filename, double alpha, Logger &logger);
 

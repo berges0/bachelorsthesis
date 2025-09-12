@@ -28,15 +28,15 @@ namespace ARRANGEMENT {
     }
 
     void add_edge_data(Arrangement &arr, Logger &logger) {
-
+        int edge_id=0;
         for(auto eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
             auto& edge = *eit;
             auto curve = edge.curve();
             const auto& unique_list = curve.data();
             bool from_polygon = (*unique_list.begin())->data().first;
             bool replacing_edge = (*unique_list.begin())->data().second;
-            edge.set_data(HalfedgeData{from_polygon, replacing_edge});
-            edge.twin()->set_data(HalfedgeData{from_polygon, replacing_edge});
+            edge.set_data(HalfedgeData{edge_id++,from_polygon, replacing_edge});
+            edge.twin()->set_data(HalfedgeData{edge_id++,from_polygon, replacing_edge});
         }
     }
 

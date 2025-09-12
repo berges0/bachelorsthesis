@@ -15,8 +15,10 @@ namespace IO_FUNCTIONS {
     // SHP I/O
     namespace SHP {
 
+        std::vector<PWH> read_shp_to_pwh(const std::string& path);
+        static Polygon_2 make_polygon_from_part(const double* X, const double* Y, int start, int end);
         void read(const std::string filename, std::vector<Segment_w_info>& segments, Logger &logger);
-        void write_to_shp(std::vector<PWH> polys, std::string path);
+        void write_to_shp(const std::vector<PWH> polys, const std::string path);
 
     } // namespace SHP
 
@@ -47,9 +49,9 @@ namespace IO_FUNCTIONS {
 
     // Polygon-Komposition
     const std::pair<std::vector<Polygon_2>, std::vector<Polygon_2>> combine_polygons(const std::vector<bool>& in_solution,
-        Arrangement& arr);
+        const Arrangement &arr);
 
-    const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle& edge, const std::vector<bool>& in_solution);
+    const Polygon_2 get_contiguous_boundary(const Arrangement::Halfedge_const_handle& edge, const std::vector<bool>& in_solution, std::vector<bool> &visited);
 
     const std::map<int, std::vector<Polygon_2>> locate_holes(const std::vector<Polygon_2>& outer_boundaries,
         const std::vector<Polygon_2>& holes);

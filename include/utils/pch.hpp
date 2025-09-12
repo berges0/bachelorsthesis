@@ -126,9 +126,9 @@ typedef Traits::Curve_2 Curve;
 // Custom halfedge class with additional data
 struct HalfedgeData
 {
+    int id;
     bool frompoly;
     bool replacing_edge=false;
-    bool visited = false;
 };
 
 struct VertexData {
