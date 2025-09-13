@@ -15,8 +15,7 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree
         if ((&group == skip)) continue;
         if (group.size() == 1){std::cout << "SOMETHING BAD HAPPENED"<< std::endl;}
         //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), std::to_string(k++)+"_group_b.svg");
-        auto relinked = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
-        int count = 0;
+        auto relinked = order_endpoints_by_orthogonal_projection(EDGE_EXTENSION::filter_segments(group));
         for (int i = 0; i < relinked.size() - 1; ++i) {
             Segment seg = Segment(relinked[i], relinked[i + 1]);
             if (seg.squared_length() == 0)continue;
@@ -28,24 +27,27 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree
             };
             segments[0].emplace_back(seg, false, -1,
                 -1, false, false, true);
-            count++;
         }
     }
     IO_FUNCTIONS::SVG::segments_to_svg(test, "testttttt.svg");
 }
 
-struct EndpointAlongDir {
+static Kernel::FT dot(const Vector& a, const Vector& b) {
+    return a.x()*b.x() + a.y()*b.y();
+}
+struct EndpointParam {
     Point p;
-    double t; // projection parameter
+    Kernel::FT    s;   // scalar parameter along the averaged line (c + s * dir)
 };
 
-std::vector<Point> order_endpoints_along_main_dir(const std::vector<Segment>& segs) {
-    // 1) Gather endpoints and estimate the predominant direction.
+std::vector<Point> order_endpoints_by_orthogonal_projection(const std::vector<Segment>& segs)
+{
+    // Gather endpoints and build a predominant direction by sign-aligned summation.
     std::vector<Point> endpoints;
     endpoints.reserve(segs.size() * 2);
 
-    double sx = 0.0, sy = 0.0;      // accumulated (signed) unit directions
-    double refx = 0.0, refy = 0.0;  // reference direction to fix sign flips
+    Vector sum(Kernel::FT(0), Kernel::FT(0));
+    Vector ref;               // reference to fix sign
     bool   have_ref = false;
 
     for (const auto& s : segs) {
@@ -53,51 +55,51 @@ std::vector<Point> order_endpoints_along_main_dir(const std::vector<Segment>& se
         endpoints.push_back(s.target());
 
         Vector v = s.to_vector();
-        double vx = CGAL::to_double(v.x());
-        double vy = CGAL::to_double(v.y());
-        double L  = std::hypot(vx, vy);
-        if (L == 0.0) continue; // skip degenerate segments
+        if (v == CGAL::NULL_VECTOR) continue;
 
-        double ux = vx / L, uy = vy / L; // unit direction of this segment
-
-        if (!have_ref) { refx = ux; refy = uy; have_ref = true; }
-        // Flip if pointing mostly the opposite way, to keep a consistent sign.
-        if (ux*refx + uy*refy < 0.0) { ux = -ux; uy = -uy; }
-
-        sx += ux; sy += uy;
+        if (!have_ref) { ref = v; have_ref = true; }
+        // Flip direction if mostly opposite to the reference.
+        if (dot(v, ref) < Kernel::FT(0)) v = -v;
+        sum = sum + v;
+    }
+    if (!have_ref || sum == CGAL::NULL_VECTOR) {
+        // Fallback: nothing to order by → return in input order.
+        return endpoints;
     }
 
-    // Fallback if everything was degenerate
-    if (!have_ref) return endpoints;
+    // Define the averaged line: through the centroid c with direction "sum".
+    //   (No normalization needed; we’ll divide by |sum|^2 when projecting.)
+    Kernel::FT cx(0), cy(0);
+    for (const auto& p : endpoints) { cx += p.x(); cy += p.y(); }
+    const Kernel::FT n = Kernel::FT( (int)endpoints.size() );
+    const Point c( cx / n, cy / n );
 
-    // Normalize the accumulated direction
-    double sL = std::hypot(sx, sy);
-    if (sL == 0.0) { sx = refx; sy = refy; sL = std::hypot(sx, sy); }
-    double dx = sx / sL, dy = sy / sL; // predominant unit direction
+    const Kernel::FT denom = dot(sum, sum); // = |sum|^2  (positive)
 
-    // 2) Choose an origin (centroid of endpoints works well for numerical stability).
-    double cx = 0.0, cy = 0.0;
-    for (const auto& p : endpoints) { cx += CGAL::to_double(p.x()); cy += CGAL::to_double(p.y()); }
-    if (!endpoints.empty()) { cx /= endpoints.size(); cy /= endpoints.size(); }
-
-    // 3) Project endpoints onto the direction and sort by the scalar parameter t.
-    std::vector<EndpointAlongDir> proj;
+    // Orthogonally project each endpoint onto that line and record its parameter s.
+    std::vector<EndpointParam> proj;
     proj.reserve(endpoints.size());
     for (const auto& p : endpoints) {
-        double px = CGAL::to_double(p.x());
-        double py = CGAL::to_double(p.y());
-        double t  = (px - cx)*dx + (py - cy)*dy; // signed distance along the direction
-        proj.push_back({p, t});
+        Vector cp = p - c;                 // vector from c to p
+        Kernel::FT s = dot(cp, sum) / denom;       // parameter along the line: c + s * sum
+        proj.push_back({p, s});
     }
-    std::sort(proj.begin(), proj.end(),
-              [](const EndpointAlongDir& a, const EndpointAlongDir& b){ return a.t < b.t; });
 
-    // 4) Return endpoints in order (left→right along predominant direction).
+    // Sort by the parameter along the line (left → right along the main direction).
+    std::sort(proj.begin(), proj.end(),
+              [](const EndpointParam& a, const EndpointParam& b){ return a.s < b.s; });
+
+    // Emit ordered endpoints.
     std::vector<Point> ordered;
     ordered.reserve(proj.size());
-    for (auto& e : proj) ordered.push_back(e.p);
+    for (const auto& e : proj) ordered.push_back(e.p);
     return ordered;
 }
+
+struct EndpointAlongDir {
+    Point p;
+    double t; // projection parameter
+};
 
 RTree build_r_tree(const std::vector<PWH> &polys) {
     std::vector<RItem> items;
@@ -115,7 +117,7 @@ void connect_outer_points(std::vector<std::vector<Segment_w_info>> &segments) {
     //int k = 0;
     for (auto &group : segments) {
         if ((&group == skip)||group.size() <= 1) continue;
-        auto order = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
+        auto order = order_endpoints_by_orthogonal_projection(EDGE_EXTENSION::filter_segments(group));
         std::vector<Segment_w_info> segs;
         //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), "group_" + std::to_string(k) + ".svg");
         //std::cout<<"Distance "<<std::sqrt(CGAL::to_double(CGAL::squared_distance(group[0].seg, group[group.size()-1].seg)))<<std::endl;
