@@ -42,14 +42,13 @@ int main(int argc, char **argv) {
     }
 
     Logger logger(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
-           version_input);
+           version_input, clParser.getAlpha());
 
     if (version == "1" ) {
         Logger logger_1(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
         version_input,clParser.getThreshold(), clParser.getThresholdScale(), clParser.getThresholdVariant());
         logger=logger_1;
     }
-
 
     logger.add("Input file name", clParser.inputFileName());
     logger.add("Output directory", clParser.outputDirectory());
@@ -62,6 +61,15 @@ int main(int argc, char **argv) {
     logger.add("Timelimit", clParser.getTimeLimit().count());
     logger.add("Threshold variant", clParser.getThresholdVariant());
 
+   /* std::vector<PWH> del_polys = IO_FUNCTIONS::SHP::read_shp_to_pwh(clParser.inputFileName());
+
+    CGAL::Polygon_set_2<Kernel> pset;
+    pset.join(del_polys.begin(), del_polys.end());
+    std::vector<PWH> united;
+    pset.polygons_with_holes(std::back_inserter(united));
+    std::filesystem::path p(clParser.inputFileName());
+
+    IO_FUNCTIONS::GPKG::write_to_gpkg(united, logger.out_dir_stem()+p.stem().string()+".gpkg");*/
 
     if (version == "0") {
         ALGORITHM::run_standard(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), logger);

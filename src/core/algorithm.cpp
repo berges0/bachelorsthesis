@@ -45,7 +45,7 @@ void aggregate(std::vector<PWH> &output_data, const Arrangement &arr, Logger &lo
 
     logger.start_operation();
     //IO_FUNCTIONS::all_polygons_in_solution(output_data, max_flow_solution, arr);
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr, logger);
     output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Combining faces of solution (milliseconds)");
     logger.add("Number of polygons in solution", holes_and_outer.first.size());
@@ -91,7 +91,8 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 
         //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-        IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
+        //IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
 
         //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
         //int status = std::system(command.c_str());
@@ -418,7 +419,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     logger.end_operation("Final max flow (milliseconds) ");
 
     logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr, logger);
     auto final_output = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Final combining faces of solution (milliseconds)");
 

@@ -696,12 +696,13 @@ void arrangement_as_polys(std::vector<PWH> &all_polys, const Arrangement& arr) {
 
 
 const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  combine_polygons(const std::vector<bool>
-&in_solution, const Arrangement &arr) {
+&in_solution, const Arrangement &arr, Logger &logger) {
     std::cout<<"GROUPSSIZE"<<in_solution.size()<<std::endl;
     std::vector<Polygon_2> outer_boundaries;
     std::vector<Polygon_2> holes;
     std::vector<bool> visited (arr.number_of_halfedges(), false);
-
+    double perimeter = 0.0;
+    double area = 0.0;
     for (auto eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit) {
         auto eitc = eit;
         if (!visited[eitc->data().id] && in_solution[eitc->face()->data().id] && (!in_solution[eitc->twin()->face()->data().id]||eitc->twin()->face()->is_unbounded())) {
@@ -712,9 +713,15 @@ const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  combine_polygo
             } else {
                 holes.emplace_back(poly);
             }
+            for (auto edge : poly.edges()) {
+                perimeter += std::sqrt(CGAL::to_double(edge.squared_length()));
+            }
+            area += CGAL::to_double(poly.area());
         }
-
     }
+    logger.add("Perimeter", perimeter);
+    logger.add("Area", area);
+    logger.add( "Objective Value", logger.alpha()*area+(1-logger.alpha())*perimeter);
     auto holes_and_outer = std::make_pair(outer_boundaries, holes);
     return holes_and_outer;
 
@@ -807,6 +814,8 @@ const std::vector<PWH> cgal_combines(const std::vector<Polygon_2> &polygons){
     pset.polygons_with_holes(std::back_inserter(out));
     return out;
 }
+
+
 
 }
 

@@ -16,7 +16,8 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
     class Logger {
     public:
 
-        explicit Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version);
+        explicit Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version,
+            double alpha);
 
         Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version,
             double threshold, double th_scale, int threshold_variant);

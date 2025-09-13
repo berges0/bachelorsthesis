@@ -53,7 +53,7 @@ namespace IO_FUNCTIONS {
     void arrangement_as_polys(std::vector<PWH> &all_polys, const Arrangement& arr);
 
     const std::pair<std::vector<Polygon_2>, std::vector<Polygon_2>> combine_polygons(const std::vector<bool>& in_solution,
-        const Arrangement &arr);
+        const Arrangement &arr, Logger &logger);
 
     const Polygon_2 get_contiguous_boundary(const Arrangement::Halfedge_const_handle& edge, const std::vector<bool>& in_solution, std::vector<bool> &visited);
 
