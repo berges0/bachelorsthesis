@@ -653,6 +653,47 @@ namespace SVG {
         svg_file.close();
     }
 }// namespace SVG
+void all_polygons_in_solution(std::vector<PWH> &    all_polys_in_sol, std::vector<bool> max_flow_solution, const Arrangement& arr) {
+    for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+        if (!max_flow_solution[fit->data().id]) {
+            continue;
+        }
+        Polygon_2 poly;
+        // outer boundary exists
+        if (!fit->has_outer_ccb()) {
+            continue;
+        }
+        auto circ = fit->outer_ccb();
+        auto curr = circ;
+        do {
+            const auto& source = curr->source()->point();
+            poly.push_back(source);
+            ++curr;
+        } while (curr != circ);
+        PWH pwh(poly);
+        all_polys_in_sol.push_back(pwh);
+    }
+}
+
+void arrangement_as_polys(std::vector<PWH> &all_polys, const Arrangement& arr) {
+    for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+        Polygon_2 poly;
+        // outer boundary exists
+        if (!fit->has_outer_ccb()) {
+            continue;
+        }
+        auto circ = fit->outer_ccb();
+        auto curr = circ;
+        do {
+            const auto& source = curr->source()->point();
+            poly.push_back(source);
+            ++curr;
+        } while (curr != circ);
+        PWH pwh(poly);
+        all_polys.push_back(pwh);
+    }
+}
+
 
 const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  combine_polygons(const std::vector<bool>
 &in_solution, const Arrangement &arr) {

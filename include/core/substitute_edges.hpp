@@ -11,7 +11,7 @@ namespace SUBSTITUTE_EDGES {
 
     void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree);
 
-    std::vector<Point> order_endpoints_along_main_dir(const std::vector<Segment>& segs);
+    std::vector<Point> order_endpoints_by_orthogonal_projection(const std::vector<Segment>& segs);
 
     RTree build_r_tree(const std::vector<PWH>& polygons);
 

@@ -44,6 +44,7 @@ void aggregate(std::vector<PWH> &output_data, const Arrangement &arr, Logger &lo
     logger.add("Number of faces solution", nr_faces_solution);
 
     logger.start_operation();
+    //IO_FUNCTIONS::all_polygons_in_solution(output_data, max_flow_solution, arr);
     auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
     output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Combining faces of solution (milliseconds)");

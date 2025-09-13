@@ -48,6 +48,10 @@ namespace IO_FUNCTIONS {
     }// namespace SVG
 
     // Polygon-Komposition
+    void all_polygons_in_solution(std::vector<PWH> &all_polys_in_sol, std::vector<bool> max_flow_solution, const Arrangement& arr);
+
+    void arrangement_as_polys(std::vector<PWH> &all_polys, const Arrangement& arr);
+
     const std::pair<std::vector<Polygon_2>, std::vector<Polygon_2>> combine_polygons(const std::vector<bool>& in_solution,
         const Arrangement &arr);
 
