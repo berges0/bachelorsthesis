@@ -113,7 +113,7 @@ void connect_outer_points(std::vector<std::vector<Segment_w_info>> &segments) {
     //int k = 0;
     for (auto &group : segments) {
         if ((&group == skip)||group.size() <= 1) continue;
-        auto order = order_endpoints_along_main_dir(EDGE_EXTENSION::filter_segments(group));
+        auto order = order_endpoints_by_orthogonal_projection(EDGE_EXTENSION::filter_segments(group));
         std::vector<Segment_w_info> segs;
         //IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(group), "group_" + std::to_string(k) + ".svg");
         //std::cout<<"Distance "<<std::sqrt(CGAL::to_double(CGAL::squared_distance(group[0].seg, group[group.size()-1].seg)))<<std::endl;
