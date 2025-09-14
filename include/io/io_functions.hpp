@@ -51,7 +51,7 @@ namespace IO_FUNCTIONS {
 
     // Polygon-Komposition
     const std::pair<std::vector<Polygon_2>, std::vector<Polygon_2>> combine_polygons(const std::vector<bool>& in_solution,
-        Arrangement& arr);
+        Arrangement& arr, Logger &logger);
 
     const Polygon_2 get_contiguous_boundary(Arrangement::Halfedge_handle& edge, const std::vector<bool>& in_solution);
 

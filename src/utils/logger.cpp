@@ -4,7 +4,8 @@
 #include "utils/logger.hpp"
 
 
-Logger::Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version) {
+Logger::Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version, double alpha) {
+    alpha_=alpha;
     timer_.start();
     std::filesystem::path p(input_file);
     std::string stem = p.stem().string();
@@ -26,7 +27,9 @@ void Logger::start_operation() {
     start_operation_=timer_.elapsed();
 }
 
-
+double Logger::alpha() {
+    return alpha_;
+}
 void Logger::end_operation(const std::string &event) {
     add(event, std::to_string(operation_duration().count()));
 }

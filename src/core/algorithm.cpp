@@ -49,8 +49,9 @@ void aggregate(std::vector<PWH> &output_data, const std::vector<Segment_w_info> 
     for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
     logger.add("Number of faces solution", nr_faces_solution);
 
+    //IO_FUNCTIONS::all_polygons_in_solution(output_data, max_flow_solution, arr);
     logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr,logger);
     output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Combining faces of solution (milliseconds)");
     logger.add("Number of polygons in solution", holes_and_outer.first.size());
@@ -186,7 +187,7 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     logger.add("Number of faces solution", nr_faces_solution);
 
     logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr,logger);
     output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Combining faces of solution (milliseconds)");
     logger.add("Number of polygons in solution", holes_and_outer.first.size());
@@ -265,12 +266,15 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
     for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
     logger.add("Number of faces solution", nr_faces_solution);
 
-    logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
-    std::vector<PWH> output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
-    logger.end_operation("Combining faces of solution (milliseconds)");
-    logger.add("Number of polygons in solution", holes_and_outer.first.size());
-    logger.add("Number of holes in solution", holes_and_outer.second.size());
+
+    std::vector<PWH> output_data;
+    //logger.start_operation();
+    IO_FUNCTIONS::all_polygons_in_solution(output_data, max_flow_solution, arr);
+    //auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr,logger);
+    //std::vector<PWH> output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
+    //logger.end_operation("Combining faces of solution (milliseconds)");
+    //logger.add("Number of polygons in solution", holes_and_outer.first.size());
+    //logger.add("Number of holes in solution", holes_and_outer.second.size());
 
     IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger.out_dir_stem() + "_solution");
 
@@ -384,7 +388,7 @@ void run_subdivision(const std::string &input_filename, const std::string &outpu
     logger.end_operation("Final max flow (milliseconds) ");
 
     logger.start_operation();
-    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr);
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr,logger);
     auto final_output = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
     logger.end_operation("Final combining faces of solution (milliseconds)");
 

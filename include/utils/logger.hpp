@@ -16,13 +16,15 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
     class Logger {
     public:
 
-        explicit Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version);
+        explicit Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version, double logger);
 
         void add(const std::string& event, JsonPushable auto&& value) {
             obj_[event] = std::forward<decltype(value)>(value);
         }
 
         std::string out_dir_stem();
+
+        double alpha();
 
         void start_operation();
 
@@ -35,6 +37,7 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
         void end();
 
     private:
+        double alpha_;
         std::string input_file;
         std::string out_dir_stem_;
 
