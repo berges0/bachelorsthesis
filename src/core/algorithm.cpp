@@ -167,7 +167,7 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
 
     logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(relinked_segments, rtree, polygonswh, logger);
+    Arrangement arr = ARRANGEMENT::build_arrangement_subst_edges(relinked_segments, rtree, polygonswh, logger);
     logger.end_operation("Building Arragnement (milliseconds)");
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
@@ -247,7 +247,7 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
 
     logger.start_operation();
-    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(connected_outer_point, rtree, polygonswh, logger);
+    Arrangement arr = ARRANGEMENT::build_arrangement_subst_edges(connected_outer_point, rtree, polygonswh, logger);
     logger.end_operation("Building Arragnement (milliseconds)");
     logger.add("Number of segments after extension", arr.number_of_edges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());

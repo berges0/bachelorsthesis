@@ -16,10 +16,10 @@ namespace ARRANGEMENT {
 
     void add_face_data(Arrangement &arr, Logger &logger);
 
-    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh,
+    Arrangement build_arrangement_subst_edges(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh,
         Logger &logger);
 
-    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &poly, Logger &logger);
+    void add_face_data_subst_edges(Arrangement &arr, RTree &rtree, const std::vector<PWH> &poly, Logger &logger);
 
     bool test_in_poly(const Point &qp, const RTree &rtree, const std::vector<PWH> &polys);
 

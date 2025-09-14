@@ -75,7 +75,7 @@ namespace ARRANGEMENT {
     }
 
 
-    Arrangement build_arrangement_relinked(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh,
+    Arrangement build_arrangement_subst_edges(const std::vector<Segment_w_info>& segments, RTree &rtree, const std::vector<PWH> &polygonswh,
         Logger &logger) {
         Arrangement arr;
         std::vector<Curve> curves;
@@ -97,12 +97,12 @@ namespace ARRANGEMENT {
         }
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr, logger);
-        add_face_data_relinked(arr, rtree, polygonswh, logger);
+        add_face_data_subst_edges(arr, rtree, polygonswh, logger);
 
         return arr;
     }
 
-    void add_face_data_relinked(Arrangement &arr, RTree &rtree, const std::vector<PWH> &polygonswh, Logger &logger) {
+    void add_face_data_subst_edges(Arrangement &arr, RTree &rtree, const std::vector<PWH> &polygonswh, Logger &logger) {
         size_t face_count = 0;
         Polygon_2 poly;
 
