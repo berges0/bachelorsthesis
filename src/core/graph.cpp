@@ -25,7 +25,6 @@ namespace GRAPH {
         int target_id = num_faces + 1;
 
         for (auto fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
-
             if (fit->is_unbounded() || !fit->has_outer_ccb()) {
                 continue; // skip the unbounded face
             }
@@ -69,6 +68,16 @@ namespace GRAPH {
                 weights.push_back(0);
                 edges.emplace_back(face_id, target_id);
                 weights.push_back(alpha*(fit->data().area) + (1-alpha)*outer_weight);
+            }
+        }
+        double C_total = 0.0;
+        for (double w : weights) {
+            if (std::isfinite(w) && w > 0) C_total += w;
+        }
+        double M = 10 * C_total; // oder 10*C_total
+        for (auto &w : weights) {
+            if (!std::isfinite(w)) {
+                w = M;
             }
         }
         Graph graph (edges, weights, source_id, target_id, num_faces);

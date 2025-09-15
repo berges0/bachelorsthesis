@@ -8,6 +8,8 @@
 namespace ARRANGEMENT {
 
     Arrangement build_arrangement(const std::vector<Segment_w_info>& segments, Logger &logger) {
+
+        std::cout << "Entered arr_build" << std::endl;
         Arrangement arr;
         std::vector<Curve> curves;
         int next_id = 0;
@@ -23,8 +25,10 @@ namespace ARRANGEMENT {
         //std::cout<< "Arrangement has "<< arr.number_of_edges() << std::endl;
         add_edge_data(arr, logger);
         add_face_data(arr, logger);
+        std::cout << "left arr_build" << std::endl;
 
         return arr;
+
     }
 
     void add_edge_data(Arrangement &arr, Logger &logger) {

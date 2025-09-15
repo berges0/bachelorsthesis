@@ -71,6 +71,7 @@ void run_standard(const std::string &input_filename, const std::string &output_f
     std::cout<<"NUMBER OF EXTENDED = "<<extended_segments.size()<<std::endl;
     logger.add("Number of edges after extension (+bbox)", extended_segments.size());
     logger.end_operation("Extending edges (milliseconds) ");
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "extended.svg");
     
 
     std::vector<PWH> output_data;
