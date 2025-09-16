@@ -61,15 +61,73 @@ int main(int argc, char **argv) {
     logger.add("Timelimit", clParser.getTimeLimit().count());
     logger.add("Threshold variant", clParser.getThresholdVariant());
 
-   /* std::vector<PWH> del_polys = IO_FUNCTIONS::SHP::read_shp_to_pwh(clParser.inputFileName());
+    /*std::string shp_input;
+    std::string json_string;
+    std::string gpkg_ouput;
+    for (const auto& entry : std::filesystem::directory_iterator(clParser.inputFileName())) {
+        if (entry.is_regular_file()) {
+            std::filesystem::path file_path = entry.path();
+            std::string ext = file_path.extension().string();
 
-    CGAL::Polygon_set_2<Kernel> pset;
-    pset.join(del_polys.begin(), del_polys.end());
-    std::vector<PWH> united;
-    pset.polygons_with_holes(std::back_inserter(united));
-    std::filesystem::path p(clParser.inputFileName());
+            if (ext == ".shp") {
+                shp_input = file_path.parent_path().string()+"/"+file_path.stem().string();
+                gpkg_ouput= file_path.parent_path().string()+"/"+file_path.stem().string()+".gpkg";
+            }
+            else if (ext == ".json") {
+                json_string = file_path.string();
+            }
+        }
+    }
 
-    IO_FUNCTIONS::GPKG::write_to_gpkg(united, logger.out_dir_stem()+p.stem().string()+".gpkg");*/
+    std::vector<PWH> polys = IO_FUNCTIONS::SHP::read_shp_to_pwh(shp_input);
+
+    // --- Compute area & perimeter ---
+    Kernel::FT area(0);
+    Kernel::FT perimeter(0);
+
+    for (auto &pwh : polys) {
+        // outer boundary
+        area += CGAL::abs(pwh.outer_boundary().area());
+        for (auto eit = pwh.outer_boundary().edges_begin(); eit != pwh.outer_boundary().edges_end(); ++eit) {
+            perimeter += std::sqrt(CGAL::to_double(eit->squared_length()));
+        }
+        // holes
+        for (auto hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+            std::cout<<"HAS HOLE";
+            area -= CGAL::abs(hit->area());
+            for (auto eit = hit->edges_begin(); eit != hit->edges_end(); ++eit) {
+                perimeter += std::sqrt(CGAL::to_double(eit->squared_length()));
+            }
+        }
+    }
+
+    double d_area = CGAL::to_double(area);
+    double d_perimeter = CGAL::to_double(perimeter);
+    std::ifstream in(json_string);
+    if (!in.is_open()) {
+        throw std::runtime_error("Could not open json file " + json_string);
+    }
+
+    nlohmann::json j;
+    in >> j; // parse JSON
+    in.close();
+
+    double alpha = j["Alpha"];
+    j["Area"]=d_area;
+    j["Perimeter"]=d_perimeter;
+    j["Objective Value"]=alpha*d_area + (1-alpha)*d_perimeter;
+    // Modify or add an attribute
+
+    // Write JSON back to file (overwrite)
+    std::ofstream out(json_string);
+    out << j.dump(4); // pretty print with indent of 4 spaces
+    out.close();
+
+    std::cout<< " PERIMETER: " << perimeter << '\n';
+    std::cout<< " AREA: " << area << '\n';
+
+
+    IO_FUNCTIONS::GPKG::write_to_gpkg(polys, gpkg_ouput);*/
 
     if (version == "0") {
         ALGORITHM::run_standard(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), logger);
