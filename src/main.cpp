@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
     logger.add("To the power of", clParser.getPower());
     logger.add("Timelimit", clParser.getTimeLimit().count());
     logger.add("Threshold variant", clParser.getThresholdVariant());
-
-    /*std::string shp_input;
+/*
+    std::string shp_input;
     std::string json_string;
     std::string gpkg_ouput;
     for (const auto& entry : std::filesystem::directory_iterator(clParser.inputFileName())) {
