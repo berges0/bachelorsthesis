@@ -146,6 +146,95 @@ void write_to_shp(std::vector<PWH> polys, std::string path) {
     DBFClose(dbfile);
     SHPClose(shapefile);
 }
+// Helper: push a ring [start, end) from SHP arrays into a Polygon_2, dropping a duplicate last==first if present.
+static Polygon_2 make_polygon_from_part(const double* X, const double* Y, int start, int end) {
+    assert(end >= start);
+    Polygon_2 poly;
+
+    // If last point duplicates first, ignore it.
+    int last = end - 1;
+    bool has_duplicate_close = (end - start) >= 2 &&
+        X[start] == X[last] && Y[start] == Y[last];
+
+    int limit = has_duplicate_close ? last : end;
+    poly.reserve(limit - start);
+    for (int i = start; i < limit; ++i) {
+        poly.push_back(Point(X[i], Y[i]));
+    }
+    return poly;
+}
+std::vector<PWH> read_shp_to_pwh(const std::string& path) {
+    std::vector<PWH> result;
+
+    const std::string shp_path = path + ".shp";
+    SHPHandle shp = SHPOpen(shp_path.c_str(), "rb");
+    if (!shp) {
+        // Couldn't open shapefile
+        return result;
+    }
+
+    int entity_count = 0;
+    int shape_type   = 0;
+    double minb[4], maxb[4];
+    SHPGetInfo(shp, &entity_count, &shape_type, minb, maxb);
+
+    // We expect polygons
+    if (!(shape_type == SHPT_POLYGON || shape_type == SHPT_POLYGONZ || shape_type == SHPT_POLYGONM)) {
+        // Not a polygon shapefile; bail out cleanly.
+        SHPClose(shp);
+        return result;
+    }
+
+    result.reserve(entity_count);
+
+    for (int i = 0; i < entity_count; ++i) {
+        SHPObject* obj = SHPReadObject(shp, i);
+        if (!obj) continue;
+
+        // Skip null/empty shapes
+        if (obj->nParts <= 0 || obj->nVertices <= 0) {
+            SHPDestroyObject(obj);
+            continue;
+        }
+
+        const double* X = obj->padfX;
+        const double* Y = obj->padfY;
+
+        // Compute part start/end indices
+        std::vector<int> starts(obj->nParts);
+        for (int p = 0; p < obj->nParts; ++p) starts[p] = obj->panPartStart[p];
+
+        std::vector<int> ends(obj->nParts);
+        for (int p = 0; p < obj->nParts - 1; ++p) ends[p] = starts[p + 1];
+        ends.back() = obj->nVertices;
+
+        // Outer ring = part 0
+        Polygon_2 outer = make_polygon_from_part(X, Y, starts[0], ends[0]);
+
+        // Normalize orientations to match your writer (outer CCW, holes CW)
+        if (outer.is_clockwise_oriented()) outer.reverse_orientation();
+
+        // Holes = parts 1..n-1
+        std::vector<Polygon_2> holes;
+        holes.reserve(std::max(0, obj->nParts - 1));
+        for (int p = 1; p < obj->nParts; ++p) {
+            Polygon_2 hole = make_polygon_from_part(X, Y, starts[p], ends[p]);
+            // Ensure CW for holes
+            if (hole.is_counterclockwise_oriented()) hole.reverse_orientation();
+            // Ignore degenerate holes
+            if (hole.size() >= 3) holes.push_back(std::move(hole));
+        }
+
+        if (outer.size() >= 3) {
+            result.emplace_back(outer, holes.begin(), holes.end());
+        }
+
+        SHPDestroyObject(obj);
+    }
+
+    SHPClose(shp);
+    return result;
+}
 
 
 }

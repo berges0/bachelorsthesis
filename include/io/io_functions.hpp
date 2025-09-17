@@ -17,6 +17,7 @@ namespace IO_FUNCTIONS {
 
         void read(const std::string filename, std::vector<Segment_w_info>& segments, Logger &logger);
         void write_to_shp(std::vector<PWH> polys, std::string path);
+        std::vector<PWH> read_shp_to_pwh(const std::string& path);
 
     } // namespace SHP
 
