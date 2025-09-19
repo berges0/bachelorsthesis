@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     Logger logger(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
            version_input, clParser.getAlpha());
 
-    if (version == "1" ) {
+    if (version == "1" || subversion =="1") {
         Logger logger_1(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
         version_input,clParser.getThreshold(), clParser.getThresholdScale(), clParser.getThresholdVariant());
         logger=logger_1;
