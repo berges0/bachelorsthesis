@@ -214,6 +214,9 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     logger.stop_time();
     std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
         0.0001, 0.0};
+    if (subversion!="0") {
+        alpha_values={0.1,0.01,0.001,0.0001};
+    }
 
     std::vector<Logger> loggers;
 
