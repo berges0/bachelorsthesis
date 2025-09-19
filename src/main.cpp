@@ -127,8 +127,8 @@ int main(int argc, char **argv) {
     std::cout<< " AREA: " << area << '\n';
 
 
-    IO_FUNCTIONS::GPKG::write_to_gpkg(polys, gpkg_ouput);*/
-
+    IO_FUNCTIONS::GPKG::write_to_gpkg(polys, gpkg_ouput);
+*/
     if (version == "0") {
         ALGORITHM::run_standard(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), logger);
     } else if (version == "1") {
