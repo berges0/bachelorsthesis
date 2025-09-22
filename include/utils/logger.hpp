@@ -22,6 +22,10 @@ requires (nlohmann::json& j, const T& v) { to_json(j, v); };
         Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version,
             double threshold, double th_scale, int threshold_variant);
 
+
+        Logger(const std::string input_file, const std::string output_directory, int64_t timelimit, std::string version,
+            double threshold, double th_scale, int threshold_variant, double deg, double dist);
+
         Logger(Logger &logger, double alpha);
 
 

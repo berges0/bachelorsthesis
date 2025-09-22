@@ -74,8 +74,8 @@ void run_standard(const std::string &input_filename, const std::string &output_f
 
     logger.stop_time();
     std::vector<PWH> output_data;
-    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
-        0.0001 , 0.00001, 0.0};
+    std::vector<double> alpha_values={alpha}; //{1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        //0.0001 , 0.00001, 0.0};
 
 
     std::vector<Logger> loggers;
@@ -122,10 +122,17 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
     logger.add("Number of halfedges in arrangement", arr.number_of_halfedges());
     logger.add("Number of faces in arrangement", arr.number_of_faces());
 
+    /*std::vector<PWH> arr_polys;
+    IO_FUNCTIONS::arrangement_as_polys(arr_polys, arr);
+    IO_FUNCTIONS::GPKG::write_to_gpkg(arr_polys, logger.out_dir_stem() + "_arr");
+    std::string command0 = "qgis " + logger.out_dir_stem() + "_arr.gpkg " + input_filename + " &";
+    int status0 = std::system(command0.c_str());
+    */
+
     logger.stop_time();
     std::vector<PWH> output_data;
-    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
-        0.0001 , 0.00001, 0.0};
+    std::vector<double> alpha_values= {alpha}; //{1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        //0.0001 , 0.00001, 0.0};
 
     std::vector<Logger> loggers;
 
@@ -142,10 +149,11 @@ void run_limited(const std::string &input_filename, const std::string &output_fi
 
         //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-        IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        //IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
 
-        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-        //int status = std::system(command.c_str());
+        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        int status = std::system(command.c_str());
 
         logger_sub.end_sub_log();
     }
@@ -157,6 +165,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     std::vector<Segment_w_info> input_segments;
 
     read_in(input_segments, input_filename, logger);
+
+    double avg_len=EDGE_EXTENSION::compute_average_length(input_segments);
 
     auto polygonswh = IO_FUNCTIONS::GPKG::read_gpkg_to_pwh(input_filename);
 
@@ -181,8 +191,7 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
 
-
-    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
+    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,avg_len*distance);
 
     auto just_seg = EDGE_EXTENSION::filter_segments(input_segments);
     Tree tree(just_seg.begin(), just_seg.end());
@@ -212,11 +221,8 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
     logger.add("Number of faces in arrangement", arr.number_of_faces());
 
     logger.stop_time();
-    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
-        0.0001, 0.0};
-    if (subversion!="0") {
-        alpha_values={0.1,0.01,0.001,0.0001};
-    }
+    std::vector<double> alpha_values={alpha}; //{1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        //0.0001, 0.0};
 
     std::vector<Logger> loggers;
 
@@ -231,11 +237,11 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
         //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-        IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        //IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
 
-        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-        //int status = std::system(command.c_str());
-
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
+        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        int status = std::system(command.c_str());
         logger_sub.end_sub_log();
     }
 }
@@ -246,6 +252,9 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
     std::vector<Segment_w_info> input_segments;
 
     read_in(input_segments, input_filename, logger);
+
+    double avg_len=EDGE_EXTENSION::compute_average_length(input_segments);
+
 
     auto polygonswh = IO_FUNCTIONS::GPKG::read_gpkg_to_pwh(input_filename);
 
@@ -270,7 +279,7 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
     std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
 
-    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,distance);
+    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, degree,avg_len*distance);
 
     SUBSTITUTE_EDGES::connect_outer_points(spatially_close);
 
@@ -294,8 +303,8 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
     logger.stop_time();
     std::vector<PWH> output_data;
-    std::vector<double> alpha_values= {1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
-        0.0001 , 0.0};
+    std::vector<double> alpha_values={alpha}; //{1.0, 0.5, 0.25, 0.15, 0.1 ,0.05, 0.035, 0.025, 0.02,  0.01 ,0.001 ,0.005 ,0.00025,
+        //0.0001 , 0.0};
 
     std::vector<Logger> loggers;
 
@@ -311,8 +320,9 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
         //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-        IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        //IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
 
+        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data,logger_sub.out_dir_stem() + "_solution");
         std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
         int status = std::system(command.c_str());
 

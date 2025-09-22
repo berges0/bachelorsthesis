@@ -107,7 +107,7 @@ typedef CGAL::Arr_segment_traits_2<Kernel> BaseTraits;
 struct Merge {
   XMonotoneCurveData operator()(const XMonotoneCurveData& d1,
                                 const XMonotoneCurveData& d2) const {
-    std::cout << "Merging data: " << std::endl;
+    //std::cout << "Merging data: " << std::endl;
     // for example: choose lower id, or add ids, etc.
     return {(d1.first || d2.first), (d1.second || d2.second)}; // simple merge, just return true if any of the curves has data
   }

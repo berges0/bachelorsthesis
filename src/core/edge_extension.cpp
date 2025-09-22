@@ -77,8 +77,6 @@ namespace EDGE_EXTENSION {
             Tree tree(just_segments.begin(), just_segments.end());
             tree.build();
 
-            double average_length = compute_average_length(segments);
-            std::cout<<"average_length: "<<average_length<<std::endl;
 
 /*
             double average_length = compute_average_length(segments);

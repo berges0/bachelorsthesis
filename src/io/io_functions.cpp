@@ -684,13 +684,19 @@ void arrangement_as_polys(std::vector<PWH> &all_polys, const Arrangement& arr) {
         }
         auto circ = fit->outer_ccb();
         auto curr = circ;
+        bool outer_face=false;
         do {
             const auto& source = curr->source()->point();
             poly.push_back(source);
+            if (curr->twin()->face()->is_unbounded()) {
+                outer_face=true;
+            }
             ++curr;
         } while (curr != circ);
         PWH pwh(poly);
-        all_polys.push_back(pwh);
+        if (!outer_face) {
+            all_polys.push_back(pwh);
+        }
     }
 }
 
@@ -721,6 +727,7 @@ const std::pair <std::vector<Polygon_2>, std::vector<Polygon_2>>  combine_polygo
     }
     logger.add("Perimeter", perimeter);
     logger.add("Area", area);
+    std::cout<<"OBJECTIVE VALUE :" << logger.alpha()*area+(1-logger.alpha())*perimeter<<std::endl;
     logger.add( "Objective Value", logger.alpha()*area+(1-logger.alpha())*perimeter);
     auto holes_and_outer = std::make_pair(outer_boundaries, holes);
     return holes_and_outer;
