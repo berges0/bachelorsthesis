@@ -237,11 +237,11 @@ void run_edge_relink(const std::string &input_filename, const std::string &outpu
 
         //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-        //IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
 
-        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
-        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-        int status = std::system(command.c_str());
+        //IO_FUNCTIONS::GPKG::write_to_gpkg(output_data, logger_sub.out_dir_stem() + "_solution");
+        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        //int status = std::system(command.c_str());
         logger_sub.end_sub_log();
     }
 }
@@ -320,11 +320,11 @@ void run_outer_endpoints(const std::string &input_filename, const std::string &o
 
         //IO_FUNCTIONS::writeToShapeFile(output_data, output_filename);
 
-        //IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
+        IO_FUNCTIONS::SHP::write_to_shp(output_data, logger_sub.out_dir_stem() + "_solution");
 
-        IO_FUNCTIONS::GPKG::write_to_gpkg(output_data,logger_sub.out_dir_stem() + "_solution");
-        std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
-        int status = std::system(command.c_str());
+        //IO_FUNCTIONS::GPKG::write_to_gpkg(output_data,logger_sub.out_dir_stem() + "_solution");
+        //std::string command = "qgis " + logger_sub.out_dir_stem() + "_solution.gpkg " + input_filename + " &";
+        //int status = std::system(command.c_str());
 
         logger_sub.end_sub_log();
     }
