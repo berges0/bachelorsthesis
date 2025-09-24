@@ -10,7 +10,7 @@ Logger::Logger(const std::string input_file, const std::string output_directory,
     std::filesystem::path p(input_file);
     std::string stem = p.stem().string();
     std::string out_dir = output_directory + "/"+ stem + "_v"+ version;
-    std::filesystem::create_directories(out_dir);
+    //std::filesystem::create_directories(out_dir);
     out_dir_stem_ = out_dir + "/" + stem + "_v" + version;
 }
 
@@ -56,7 +56,7 @@ Logger::Logger(const std::string input_file, const std::string output_directory,
             throw std::runtime_error("threshold variant not recognized");
         }
     }
-    suffix+=+"dist_"+std::to_string((int)dist)+"deg_"+std::to_string((int)deg);
+    suffix+=+"dist_"+std::to_string(dist)+"deg_"+std::to_string(deg);
 
     timer_.start();
     std::filesystem::path p(input_file);

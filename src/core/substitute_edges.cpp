@@ -26,6 +26,7 @@ void relink_edges(std::vector<std::vector<Segment_w_info>> &segments, Tree &tree
             if (seg.squared_length() == 0)continue;
 
             Point mid_point = CGAL::midpoint(seg.source(), seg.target());
+            //test if is a corner to corner connection on polygon
             if (tree.any_intersection(mid_point)) {
                 test.push_back(seg);
                 continue;

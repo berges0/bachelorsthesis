@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     Logger logger(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
            version_input, clParser.getAlpha());
 
-    if (version == "1" || subversion =="1") {
+    if (version == "1") {
         Logger logger_1(clParser.inputFileName(), clParser.outputDirectory(),clParser.getTimeLimit().count(),
         version_input,clParser.getThreshold(), clParser.getThresholdScale(), clParser.getThresholdVariant());
         logger=logger_1;
@@ -205,16 +205,241 @@ int main(int argc, char **argv) {
     logger.add("To the power of", clParser.getPower());
     logger.add("Timelimit", clParser.getTimeLimit().count());
     logger.add("Threshold variant", clParser.getThresholdVariant());
+
+
+/*    auto polygonswh = IO_FUNCTIONS::SHP::read_shp_to_pwh(clParser.inputFileName());
+
+    CGAL::Polygon_set_2<Kernel> pset;
+    pset.join(polygonswh.begin(), polygonswh.end());
+    std::vector<PWH> out;
+    pset.polygons_with_holes(std::back_inserter(out));
+
+    std::cout<<"SIZE: "<< out.size()<<'\n';
+    IO_FUNCTIONS::GPKG::write_to_gpkg(out,logger.out_dir_stem()+"_delaunay_combined");
+
+
+    std::filesystem::path p(clParser.inputFileName());
+
+    std::string villagename = p.stem().string();
+
+    std::string reference_log = "/home/samuel-berge/Downloads/experiment_w_edge_elongation/output_exp1/"+ villagename + "_v0/" + villagename + "_v0_a" +
+        std::to_string(clParser.getAlpha()) + "/" + villagename + "_v0_a" + std::to_string(clParser.getAlpha()) + "_log.json";
+
+    std::ifstream in(reference_log);
+    if (!in) { throw std::runtime_error("Cannot open " + reference_log); }
+    nlohmann::json j;
+    in >> j; // parse JSON
+    in.close();
+
+    int num_faces_arr = j["Number of faces in arrangement"];
+    int num_input_polys = j["Number of polygons in input"];
+    int num_new_faces=num_faces_arr-num_input_polys;
+    double ref_ov = j["Objective Value"];
+
+    nlohmann::json js;
+    js["Standard_nr_faces"]=num_new_faces;
+    js["OV ref_solution"]=ref_ov;
+
+    std::vector<Segment_w_info> input_segments;
+
+    ALGORITHM::read_in(input_segments, clParser.inputFileName(), logger);
+
+    auto polygonswh = IO_FUNCTIONS::GPKG::read_gpkg_to_pwh(clParser.inputFileName());
+
+    RTree rtree = SUBSTITUTE_EDGES::build_r_tree(polygonswh);
+
+    double avg_len=EDGE_EXTENSION::compute_average_length(input_segments);
+
+    EDGE_EXTENSION::add_outer_box(input_segments,0.01);
+
+    std::vector<Segment_w_info> extended_segments;
+
+    extended_segments = EDGE_EXTENSION::STANDARD::extension(input_segments);
+
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(extended_segments), "after_extension.svg");
+
+    std::cout<<"Number of segments after extension: "<<extended_segments.size()<<std::endl;
+    js["Standard_nr_extended_edges"]=extended_segments.size()-4;
+
+
+    auto spatially_close = PRE_PROCESS::group_by_degree_and_closeness(extended_segments, clParser.getDegree()
+        ,avg_len*clParser.getDistance());
+
+    auto spatially_close_2 = spatially_close;
+
+    auto just_seg = EDGE_EXTENSION::filter_segments(input_segments);
+    Tree tree(just_seg.begin(), just_seg.end());
+    tree.build();
+    tree.accelerate_distance_queries();
+
+    SUBSTITUTE_EDGES::relink_edges(spatially_close, tree);
+
+    auto relinked_segments = spatially_close[0];
+
+    if (subversion=="1") {
+        SUBSTITUTE_EDGES::post_prune(relinked_segments);
+    }
+    std::cout<<"Number of segments after relinking: "<<relinked_segments.size()<<std::endl;
+    js["Relinked_nr_extended_edges"]=relinked_segments.size()-4;
+
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(relinked_segments), "after_relink.svg");
+
+
+
+    std::vector<PWH> output_data;
+
+
+    logger.start_operation();
+    Arrangement arr = ARRANGEMENT::build_arrangement_relinked(relinked_segments, rtree, polygonswh, logger);
+    int rel_faces=arr.number_of_faces()-num_input_polys;
+    js["Relinked_nr_faces_arr"]=rel_faces;
+    js["Reduction of face number by relink"] =static_cast<double>(rel_faces)/num_new_faces;
+
+    logger.start_operation();
+    Graph graph = GRAPH::build_graph(arr, clParser.getAlpha(), logger);
+    logger.end_operation("Building Graph (milliseconds)");
+    logger.add("Number of edges in graph", std::get<0>(graph).size());
+
+
+    logger.start_operation();
+    std::vector<bool> max_flow_solution = MAX_FLOW::max_flow(graph, arr);
+    logger.end_operation("Running Max Flow (milliseconds)");
+    int nr_faces_solution = 0;
+    for (int i = 0; i < max_flow_solution.size(); i++) {if (max_flow_solution[i]) nr_faces_solution++;}
+    logger.add("Number of faces solution", nr_faces_solution);
+
+    logger.start_operation();
+    //IO_FUNCTIONS::all_polygons_in_solution(output_data, max_flow_solution, arr);
+    auto holes_and_outer = IO_FUNCTIONS::combine_polygons(max_flow_solution, arr, logger);
+    output_data = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer.first, holes_and_outer.second);
+    logger.end_operation("Combining faces of solution (milliseconds)");
+    logger.add("Number of polygons in solution", holes_and_outer.first.size());
+    logger.add("Number of holes in solution", holes_and_outer.second.size());
+    SUBSTITUTE_EDGES::connect_outer_points(spatially_close_2);
+
+
+
+    // --- Compute area & perimeter ---
+    Kernel::FT area(0);
+    Kernel::FT perimeter(0);
+
+    for (auto &pwh : output_data) {
+        // outer boundary
+        area += CGAL::abs(pwh.outer_boundary().area());
+        for (auto eit = pwh.outer_boundary().edges_begin(); eit != pwh.outer_boundary().edges_end(); ++eit) {
+            perimeter += std::sqrt(CGAL::to_double(eit->squared_length()));
+        }
+        // holes
+        for (auto hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+            std::cout<<"HAS HOLE";
+            area -= CGAL::abs(hit->area());
+            for (auto eit = hit->edges_begin(); eit != hit->edges_end(); ++eit) {
+                perimeter += std::sqrt(CGAL::to_double(eit->squared_length()));
+            }
+        }
+    }
+
+    double d_area = CGAL::to_double(area);
+    double d_perimeter = CGAL::to_double(perimeter);
+
+    js["Area ER"]=d_area;
+    js["Perimeter ER"]=d_perimeter;
+    js["Objective Value ER"]=clParser.getAlpha()*d_area + (1-clParser.getAlpha())*d_perimeter;
+
+    double ov_det_er= clParser.getAlpha()*d_area+ (1-clParser.getAlpha())*d_perimeter;
+    ov_det_er/=ref_ov;
+    ov_det_er-=1;
+    js["Objective det. by ER"]=ov_det_er;
+
+    auto connected_outer_point_2 = spatially_close_2[0];
+
+
+    IO_FUNCTIONS::SVG::segments_to_svg(EDGE_EXTENSION::filter_segments(connected_outer_point_2), "after_reconnect.svg");
+
+    std::cout<<"Number of segments after reconnecting: "<<connected_outer_point_2.size()<<std::endl;
+
+
+    logger.start_operation();
+    Arrangement arr2 = ARRANGEMENT::build_arrangement_relinked(connected_outer_point_2, rtree, polygonswh, logger);
+    int con_faces=arr2.number_of_faces()-num_input_polys;
+    js["Reconnected_nr_faces_arr"]=con_faces;
+    js["Reduction of face number by reconnect"] =static_cast<double>(con_faces)/num_new_faces;
+
+    logger.start_operation();
+    Graph graph2 = GRAPH::build_graph(arr2, clParser.getAlpha(), logger);
+    logger.end_operation("Building Graph (milliseconds)");
+    logger.add("Number of edges in graph", std::get<0>(graph2).size());
+
+
+    logger.start_operation();
+    std::vector<bool> max_flow_solution2 = MAX_FLOW::max_flow(graph2, arr2);
+    logger.end_operation("Running Max Flow (milliseconds)");
+    int nr_faces_solution2 = 0;
+    for (int i = 0; i < max_flow_solution2.size(); i++) {if (max_flow_solution2[i]) nr_faces_solution2++;}
+    logger.add("Number of faces solution", nr_faces_solution2);
+
+    logger.start_operation();
+    //IO_FUNCTIONS::all_polygons_in_solution(output_data, max_flow_solution, arr);
+    auto holes_and_outer2 = IO_FUNCTIONS::combine_polygons(max_flow_solution2, arr2, logger);
+    auto output_data2 = IO_FUNCTIONS::create_polygons_with_holes(holes_and_outer2.first, holes_and_outer2.second);
+    logger.end_operation("Combining faces of solution (milliseconds)");
+    logger.add("Number of polygons in solution", holes_and_outer2.first.size());
+    logger.add("Number of holes in solution", holes_and_outer2.second.size());
+
+
+    // --- Compute area & perimeter ---
+    Kernel::FT area2(0);
+    Kernel::FT perimeter2(0);
+
+    for (auto &pwh2 : output_data2) {
+        // outer boundary
+        area2 += CGAL::abs(pwh2.outer_boundary().area());
+        for (auto eit2 = pwh2.outer_boundary().edges_begin(); eit2 != pwh2.outer_boundary().edges_end(); ++eit2) {
+            perimeter2 += std::sqrt(CGAL::to_double(eit2->squared_length()));
+        }
+        // holes
+        for (auto hit2 = pwh2.holes_begin(); hit2 != pwh2.holes_end(); ++hit2) {
+            std::cout<<"HAS HOLE";
+            area2 -= CGAL::abs(hit2->area());
+            for (auto eit2 = hit2->edges_begin(); eit2 != hit2->edges_end(); ++eit2) {
+                perimeter2 += std::sqrt(CGAL::to_double(eit2->squared_length()));
+            }
+        }
+    }
+
+    double d_area2 = CGAL::to_double(area2);
+    double d_perimeter2 = CGAL::to_double(perimeter2);
+
+    js["Area CO"]=d_area2;
+    js["Perimeter CO"]=d_perimeter2;
+    js["Objective Value CO"]=clParser.getAlpha()*d_area2 + (1-clParser.getAlpha())*d_perimeter2;
+
+    double ov_det_co= clParser.getAlpha()*d_area2+ (1-clParser.getAlpha())*d_perimeter2;
+    ov_det_co/=ref_ov;
+    ov_det_co-=1;
+    js["Objective det. by CO"]=ov_det_co;
+
+
+    std::filesystem::path pattt= "/home/samuel-berge/Downloads/arr_reduction/"+std::to_string(clParser.getAlpha())+"/deg" + std::to_string(clParser.getDegree()) + "_dist"+
+            std::to_string(clParser.getDistance())+"/";
+    if (!std::filesystem::exists(pattt)) {
+        std::filesystem::create_directories(pattt); // creates all needed parent dirs
+    }
+
+
     std::vector<PWH> polsys = IO_FUNCTIONS::GPKG::read_gpkg_to_pwh(clParser.inputFileName());
 
     std::vector<Segment_w_info> SEGS;
     IO_FUNCTIONS::pwh_to_swi(polsys,SEGS);
-    std::cout<< "Average length:" << EDGE_EXTENSION::compute_average_length(SEGS)<<std::endl;
-    /*
+    //std::cout<< "Average length:" << EDGE_EXTENSION::compute_average_length(SEGS)<<std::endl;
+    double avg_length=EDGE_EXTENSION::compute_average_length(SEGS);
+    js["Avg_length"]=avg_length;
 
     std::vector<double> per_poly_means;
     std::vector<double> per_poly_stdev;
     MeanStddev mean_stdv = mean_edge_to_other_polygon_distance(SEGS, &per_poly_means, &per_poly_stdev);
+    js["Mean distance"]=mean_stdv.mean;
+
     std::cout << "Mean: "<< mean_stdv.mean << '\n';
     std::cout << "Standard deviation from mean: "<< mean_stdv.stddev << '\n';
 
@@ -241,6 +466,13 @@ int main(int argc, char **argv) {
 
     std::cout << "Average polygon area: " << avg_area << " m\n";
     std::cout << "Standard deviation polygon area: " << std::sqrt(variance) << "m\n";
+
+    std::ofstream out("/home/samuel-berge/Downloads/arr_reduction/"+std::to_string(clParser.getAlpha())+"/deg" + std::to_string(clParser.getDegree()) + "_dist"+
+    std::to_string(clParser.getDistance())+"/"+ villagename+".json");
+
+    out << js.dump(4); // pretty-print with 4 spaces
+    out.close();
+
     //Per polygon (outer rings treated individually):
     for (std::size_t pid = 0; pid < per_poly_means.size(); ++pid) {
         if (std::isnan(per_poly_means[pid])) continue;
