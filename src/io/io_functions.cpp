@@ -405,6 +405,86 @@ void write_to_gpkg(const std::vector<PWH>& polys, const std::string& path) {
     GDALClose(dataset);
 }
 
+static inline double to_d(const Kernel::FT& v) { return CGAL::to_double(v); }
+
+void write_segments_to_gpkg(const std::vector<Segment>& segs,
+                            const std::string& path_no_ext,
+                            const std::string& layer_name)
+{
+    GDALAllRegister();
+    const std::string file = path_no_ext + ".gpkg";
+
+    // open existing for update or create new
+    GDALDataset* dataset = nullptr;
+    if (std::filesystem::exists(file)) {
+        dataset = static_cast<GDALDataset*>(
+            GDALOpenEx(file.c_str(), GDAL_OF_UPDATE, nullptr, nullptr, nullptr));
+        if (!dataset) throw std::runtime_error("Failed to open GPKG for update: " + file);
+    } else {
+        GDALDriver* drv = GetGDALDriverManager()->GetDriverByName("GPKG");
+        if (!drv) throw std::runtime_error("GPKG driver not available");
+        dataset = drv->Create(file.c_str(), 0, 0, 0, GDT_Unknown, nullptr);
+        if (!dataset) throw std::runtime_error("Failed to create GPKG file: " + file);
+    }
+
+    // spatial ref
+    OGRSpatialReference srs;
+    if (srs.SetFromUserInput(global_crs.c_str()) != OGRERR_NONE) {
+        GDALClose(dataset);
+        throw std::runtime_error("Invalid CRS: " + global_crs);
+    }
+    srs.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    srs.AutoIdentifyEPSG();
+
+    // if layer exists, delete & recreate (keeps things simple)
+    int idx = -1;
+    for (int i = 0; i < dataset->GetLayerCount(); ++i) {
+        OGRLayer* lyr = dataset->GetLayer(i);
+        if (lyr && layer_name == lyr->GetName()) { idx = i; break; }
+    }
+    if (idx >= 0) {
+        if (dataset->DeleteLayer(idx) != OGRERR_NONE) {
+            throw std::runtime_error("Failed to delete layer: " + layer_name);
+        }
+    }
+
+    const char* lco[] = { "FID=id", "GEOMETRY_NAME=geom", nullptr };
+    OGRLayer* layer = dataset->CreateLayer(layer_name.c_str(), &srs, wkbLineString, const_cast<char**>(lco));
+    if (!layer) { GDALClose(dataset); throw std::runtime_error("Failed to create layer: " + layer_name); }
+
+    // add an integer id field
+    {
+        OGRFieldDefn f_id("id", OFTInteger64);
+        if (layer->CreateField(&f_id) != OGRERR_NONE) {
+            GDALClose(dataset);
+            throw std::runtime_error("Failed to create id field");
+        }
+    }
+
+    // write features
+    long long fid = 0;
+    for (const auto& s : segs) {
+        const Point& a = s.source();
+        const Point& b = s.target();
+
+        OGRLineString ls;
+        ls.addPoint(to_d(a.x()), to_d(a.y()));
+        ls.addPoint(to_d(b.x()), to_d(b.y()));
+
+        OGRFeature* f = OGRFeature::CreateFeature(layer->GetLayerDefn());
+        f->SetField("id", static_cast<GIntBig>(fid++));
+        f->SetGeometry(&ls);
+
+        if (layer->CreateFeature(f) != OGRERR_NONE) {
+            OGRFeature::DestroyFeature(f);
+            GDALClose(dataset);
+            throw std::runtime_error("Failed to create feature");
+        }
+        OGRFeature::DestroyFeature(f);
+    }
+
+    GDALClose(dataset);
+}
 
 
 //helper function to convert OGR polygons to CGAL polygons

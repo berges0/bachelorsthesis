@@ -31,6 +31,9 @@ namespace IO_FUNCTIONS {
 
         void write_to_gpkg(const std::vector<PWH>& polys, const std::string& path);
 
+        void write_segments_to_gpkg(const std::vector<Segment>& segs,
+                                const std::string& path_no_ext,
+                                const std::string& layer_name);
         // Helper: OGR -> CGAL
         PWH OGRPolygonToCGAL(OGRPolygon* poPolygon);
 

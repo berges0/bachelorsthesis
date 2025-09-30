@@ -10,7 +10,7 @@ Logger::Logger(const std::string input_file, const std::string output_directory,
     std::filesystem::path p(input_file);
     std::string stem = p.stem().string();
     std::string out_dir = output_directory + "/"+ stem + "_v"+ version;
-    //std::filesystem::create_directories(out_dir);
+    std::filesystem::create_directories(out_dir);
     out_dir_stem_ = out_dir + "/" + stem + "_v" + version;
 }
 

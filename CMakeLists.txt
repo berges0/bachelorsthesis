@@ -36,6 +36,7 @@ add_executable(aggregator
         src/core/preprocess.cpp
         include/core/substitute_edges.hpp
         src/core/substitute_edges.cpp
+        src/utils/metric_simplification.cpp
 )
 # Precompile headers
 target_precompile_headers(aggregator PRIVATE include/utils/pch.hpp)
