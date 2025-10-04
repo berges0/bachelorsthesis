@@ -27,7 +27,7 @@ namespace ALGORITHM{
         double th_scale, int th_variant, Logger &logger);
 
     void run_subdivision(const std::string &input_filename, const std::string &output_filename, double alpha, double to_the_power_of,
-        double threshold, double th_scale, int th_variant, double degree, double distance, std::string subversion, Logger &logger);
+        std::string subversion, Logger &logger);
 
     void run_preprocessed(const std::string &input_filename, const std::string &output_filename, double alpha, double degree,
         double distance, std::string subversion, Logger &logger);

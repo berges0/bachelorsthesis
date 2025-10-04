@@ -4,8 +4,6 @@ project(edge_aligned_aggregation)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Add external subdirectory (your shapefile loader lib)
-add_subdirectory(lib/shapefileaggregationloader)
 
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/output)
 
@@ -53,5 +51,4 @@ target_include_directories(aggregator PRIVATE
 target_link_libraries(aggregator
         PRIVATE GDAL::GDAL  # Link GDAL libraries
         PRIVATE CGAL::CGAL
-        PRIVATE instance_loader_lib  # Ensure this is linked properly from the submodule
 )

@@ -30,9 +30,6 @@
 #include <CGAL/Arr_extended_dcel.h>
 #include <typeinfo>
 #include <cmath>
-#include "instance_loader/BasicDataStructures.hpp"
-#include "instance_loader/Geometry.hpp"
-#include "instance_loader/shapefile_io_operations.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
 #include <boost/graph/graph_traits.hpp>

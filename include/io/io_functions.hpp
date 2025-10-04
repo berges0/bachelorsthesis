@@ -12,16 +12,6 @@
 
 namespace IO_FUNCTIONS {
 
-    // SHP I/O
-    namespace SHP {
-
-        std::vector<PWH> read_shp_to_pwh(const std::string& path);
-        static Polygon_2 make_polygon_from_part(const double* X, const double* Y, int start, int end);
-        void read(const std::string filename, std::vector<Segment_w_info>& segments, Logger &logger);
-        void write_to_shp(const std::vector<PWH> polys, const std::string path);
-
-    } // namespace SHP
-
     // GPKG I/O
     namespace GPKG {
 
