@@ -11,10 +11,10 @@ cxxopts::Options CLParser::createParser() {
         (ALPHA, "Alpha", cxxopts::value<double>()->default_value("0.1"))                  //
         (TIMELIMIT, "Maximum time in seconds", cxxopts::value<int>()->default_value("10000")) //
         (VERSION, "Algorithm version", cxxopts::value<std::string>()->default_value("0.0")) //
-        (THRESHOLD, "Threshold", cxxopts::value<double>()->default_value("150")) //
+        (THRESHOLD, "Threshold", cxxopts::value<double>()->default_value("50")) //
         (THRESHOLDSCALE, "Threshold scale", cxxopts::value<double>()->default_value("10")) //
-        (DEGREE, "Degree threshold", cxxopts::value<double>()->default_value("10")) //
-        (DISTANCE, "Distance threshold", cxxopts::value<double>()->default_value("10"))//
+        (DEGREE, "Degree threshold", cxxopts::value<double>()->default_value("5")) //
+        (DISTANCE, "Distance threshold", cxxopts::value<double>()->default_value("0.75"))//
         (POWER, "To the power of", cxxopts::value<double>()->default_value("0.5"))//
         (THRESHOLDVARIANT, "Threshold variant", cxxopts::value<int>()->default_value("0")) //
         // real optional (no default)

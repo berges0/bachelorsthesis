@@ -214,6 +214,11 @@ int main(int argc, char **argv) {
     } else if (version == "2"){
         ALGORITHM::run_preprocessed(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getDegree(),
             clParser.getDistance(), subversion, logger);
+
+    // !!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!
+    //getDistance(), so δ originally meant absolute distance allowed for merging. Now the absolute distance for an input data
+    //is avg_edge_length(data)*δ. So if δ=10 and avg_edge_length(data)=5, then edges within 50 units of shortest distance to each other
+    //can be merged. That is, in a relaxed similar group (see thesis), with center edge c, edges are at most 2*50+len(c) apart.
     } else if (version == "3") {
         ALGORITHM::run_edge_relink(clParser.inputFileName(), clParser.outputDirectory(), clParser.getAlpha(), clParser.getThreshold(),
             clParser.getThresholdScale(), clParser.getThresholdVariant(), clParser.getDegree(), clParser.getDistance(), subversion, logger);
