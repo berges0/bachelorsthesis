@@ -1,3 +1,0 @@
-[submodule "lib/shapefileaggregationloader"]
-	path = lib/shapefileaggregationloader
-	url = git@gitlab.informatik.uni-bonn.de:coan/projects/shapefileaggregationloader.git
