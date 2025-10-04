@@ -46,6 +46,7 @@ Distance (delta) limitation factor, that is multiplied by the avg. edge length o
 Also for EdgeRelink and ConnectOuter (Standard: 0.75)
 
 
+
 --thresholdvariant INT
 Threshold variant (constant, linear, square root) for edge extension (Standard: 0)
 
